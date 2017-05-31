@@ -1,0 +1,91 @@
+#!/bin/bash
+set -o errexit
+set -o errtrace
+set -o functrace
+set -o pipefail
+set -o nounset
+[ -n "${DEBUG:=}" ] && set -x # xtrace
+
+# -------------------------------------------------------------------------------------------------
+
+if [ "${Action}" = "plsql" -o "${Action}" = "all" ] ; then
+	InfoMessage "        Autochecking PLSQL codebase, views for compilation errors"
+
+	# 2do! implement _flags containing noplsqlcheck option
+	if [ -z "${TargetsToCheck:-}" ] ; then
+		TargetsToCheck=( $(
+			set \
+				| ${local_grep} -Ei '^dpltgt_' \
+				| ${local_grep} -Evi '^dpltgt_deploy_repo_' \
+				| ${local_sed} 's/^dpltgt_\(.*\)_\(db\|user\|password\|tbs_\S+\|flags\)\s*=\s*\(.*\)\s*$/\1/g' \
+				| ${local_sort} -u
+		) )
+		InfoMessage "            autodetermined targets to be checked = ${TargetsToCheck[*]}"
+	else
+		InfoMessage "            supplied targets to be checked = ${TargetsToCheck[*]}"
+	fi
+
+	if [ -n "${TargetsToCheck:-}" ] ; then
+		cd "${ScriptPath}"
+
+		cat > "${TmpPath}/${Env}.autocheck_plsql.${RndToken}.sql" <<-EOF
+			whenever sqlerror exit 1 rollback
+			whenever oserror exit 2 rollback
+
+			set autoprint off
+			set autotrace off
+			set echo off
+			set define off
+			set feedback on
+			set heading off
+			set headsep off
+			set linesize 2048
+			set newpage none
+			set recsep off
+			set serveroutput on size unlimited format truncated
+			set tab on
+			set termout off
+			set trimout on
+			set trimspool on
+			set verify off
+			set wrap off
+
+			set exitcommit off
+
+		EOF
+
+		echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.autocheck_plsql.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.autocheck_plsql.${RndToken}.sql"
+
+		cat >> "${TmpPath}/${Env}.autocheck_plsql.${RndToken}.sql" <<-EOF
+			prompt --- recompiling schema
+			exec phr_utl_deploy.recompile_schema();
+
+			show errors
+
+			prompt --- checking PLSQL code status
+			exec phr_utl_deploy.check_plsql_status();
+
+			exit success
+		EOF
+
+		for l_target in ${TargetsToCheck[@]} ; do
+			InfoMessage "            processing target \"${l_target}\""
+
+			l_target_user_var=dpltgt_${l_target}_user
+			l_target_password_var=dpltgt_${l_target}_password
+			l_target_db_var=dpltgt_${l_target}_db
+
+			l_target_user=${!l_target_user_var}
+			l_target_password=${!l_target_password_var}
+			l_target_db=${!l_target_db_var}
+
+			DoLog "                target credentials = \"${l_target_user}/***@${l_target_db}\""
+
+			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.autocheck_plsql.${RndToken}.sql" )
+			"${SqlPlusBinary}" -L -S "${l_target_user}/${l_target_password}@${l_target_db}" @"${l_sqlplus_script_file}" \
+				|| ThrowException "SQL*Plus failed"
+		done
+
+		[ -z "${DEBUG}" ] && rm "${TmpPath}/${Env}.autocheck_plsql.${RndToken}.sql"
+	fi
+fi
