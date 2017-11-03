@@ -124,12 +124,25 @@ with xyz as (
             where FX.id_db_script = F.id_db_script
                 and FX.nam_deploy_target = DT.nam_atomic_target
                 and FX.num_return_code <= 0
+                and FX.num_return_code not in (-2)
         )
 )
 select seq_db_deployment.nextval, :l_new_deployment_id, id_db_script, nam_atomic_target, script_run_order,
-	case when '&script_action' = 'sync-only' then 0 else null end as num_return_code,
-	case when '&script_action' = 'sync-only' then systimestamp else null end as fip_start,
-	case when '&script_action' = 'sync-only' then systimestamp else null end as fip_finish
+    case
+        when '&script_action' = 'sync-only' then 0
+        when dat_folder >= sysdate+1/24 then -2
+        else null
+    end as num_return_code,
+    case
+        when '&script_action' = 'sync-only' then systimestamp
+        when dat_folder >= sysdate+1/24 then systimestamp
+        else null
+    end as fip_start,
+    case
+    when '&script_action' = 'sync-only' then systimestamp
+    when dat_folder >= sysdate+1/24 then systimestamp
+    else null
+    end as fip_finish
 from xyz
 ;
 

@@ -14,6 +14,7 @@ output$ as (
     from last_deploy$ X
         join t_db_script_execution FX
             on FX.id_db_deployment = X.last_id_db_deployment
+            and ( FX.num_return_code is null or FX.num_return_code >= 0 )
         join t_db_script F
             on F.id_db_script = FX.id_db_script
         join t_db_increment I
