@@ -408,13 +408,15 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			# ----------------------------------------------------------------------------------------------
 
-			InfoMessage "        pre-phase + execution"
+			InfoMessage "        pre-phase"
 
-			cat > "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
+			cat > "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
 				whenever sqlerror exit 1 rollback
 				whenever oserror exit 2 rollback
 
 				-- phase: pre-phase
+
+				connect ${cfg_deploy_repo_db}
 
 				set autoprint off
 				set autotrace off
@@ -437,11 +439,9 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			EOF
 
-			echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
+			echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
 
-			cat >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				connect ${cfg_deploy_repo_db}
+			cat >> "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
 
 				prompt --- updating deployment repository (pre-phase)
 
@@ -454,8 +454,27 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 				commit;
 
 				spool off
+				exit success
+			EOF
+
+			scriptReturnCode=0
+
+			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" )
+			"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
+				2> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.stderr.out" \
+				|| scriptReturnCode=$?
+
+			# ----------------------------------------------------------------------------------------------
+
+			InfoMessage "        execution"
+
+			cat > "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
+				whenever sqlerror exit 1 rollback
+				whenever oserror exit 2 rollback
 
 				-- phase: execution
+
+				connect ${l_db_user}/${l_db_password}@${l_db_db}
 
 				set autoprint off
 				set autotrace off
@@ -482,8 +501,6 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 			echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
 
 			cat >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				connect ${l_db_user}/${l_db_password}@${l_db_db}
 
 				col "It's ..." format a40
 				select user||'@'||global_name as "It's ..." from global_name;
@@ -682,6 +699,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 				rm "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.stderr.out"
 				rm "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
 
+				rm "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
 				rm "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.log"
 			)
 
