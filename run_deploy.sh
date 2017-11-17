@@ -121,6 +121,7 @@ if [ -z "${ORACLE_HOME:-}" -a -z "${cfg_oracle_home:-}" ] ; then
 	ThrowException 'Neither the ORACLE_HOME env. var. nor the "cfg_oracle_home" config var. is set'
 fi
 
+cfg_deploy_repo_tech=tech.${dpltgt_deploy_repo_tech:-oracle}
 cfg_deploy_repo_db=${dpltgt_deploy_repo_user}/${dpltgt_deploy_repo_password}@${dpltgt_deploy_repo_db} || ThrowException "Deployment repository DB-config vars not set"
 InfoMessage "    deployment repository = \"${dpltgt_deploy_repo_user}/******@${dpltgt_deploy_repo_db}\""
 
@@ -398,10 +399,12 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 		# ----------------------------------------------------------------------------------------------
 
 		if [ "${fakeExec}" = "no" ] ; then
+			l_script_tech_var=dpltgt_${l_schema_id}_tech
 			l_db_user_var=dpltgt_${l_schema_id}_user
 			l_db_password_var=dpltgt_${l_schema_id}_password
 			l_db_db_var=dpltgt_${l_schema_id}_db
 
+			l_script_tech=tech.${!l_db_tech_var:-oracle}
 			l_db_user=${!l_db_user_var}
 			l_db_password=${!l_db_password_var}
 			l_db_db=${!l_db_db_var}
@@ -410,281 +413,44 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			InfoMessage "        pre-phase"
 
-			cat > "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-				whenever sqlerror exit 1 rollback
-				whenever oserror exit 2 rollback
+			. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" \
+				pre-phase-run \
+				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
+				"${cfg_deploy_repo_db}"
 
-				-- phase: pre-phase
-
-				connect ${cfg_deploy_repo_db}
-
-				set autoprint off
-				set autotrace off
-				set echo on
-				set define off
-				set escape off
-				set feedback on
-				set heading on
-				set headsep on
-				set linesize 32767
-				set sqlbl off
-				set termout off
-				set trimout on
-				set trimspool on
-				set verify on
-				set wrap on
-				set sqlterminator ';'
-
-				set exitcommit off
-
-			EOF
-
-			echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-			cat >> "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				prompt --- updating deployment repository (pre-phase)
-
-				update t_db_script_execution FX
-				set FX.fip_start = current_timestamp
-				where FX.id_db_script_execution = ${l_id_script_execution};
-
-				prompt --- OK
-
-				commit;
-
-				spool off
-				exit success
-			EOF
-
-			scriptReturnCode=0
-
-			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" )
-			"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
-				2> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.stderr.out" \
-				|| scriptReturnCode=$?
+			scriptReturnCode=$?
 
 			# ----------------------------------------------------------------------------------------------
 
 			InfoMessage "        execution"
 
-			cat > "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-				whenever sqlerror exit 1 rollback
-				whenever oserror exit 2 rollback
+			. "${CommonsPath}/${l_script_tech}/script_exec.sh" \
+				run \
+				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
+				"${l_db_user}/${l_db_password}@${l_db_db}" \
+				"${l_script_folder}" "${l_script_file}" "${dbDefinesScriptFile}" "${l_sqlplus_defines_flag}"
 
-				-- phase: execution
-
-				connect ${l_db_user}/${l_db_password}@${l_db_db}
-
-				set autoprint off
-				set autotrace off
-				set echo on
-				set define on
-				set escape off
-				set feedback on
-				set heading on
-				set headsep on
-				set linesize 32767
-				set serveroutput on size unlimited format truncated
-				set sqlbl on
-				set sqlterminator ';'
-				set termout off
-				set trimout on
-				set trimspool on
-				set verify on
-				set wrap on
-
-				set exitcommit on
-
-			EOF
-
-			echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-			cat >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				col "It's ..." format a40
-				select user||'@'||global_name as "It's ..." from global_name;
-
-				prompt --- setting up deployment config vars
-
-			EOF
-
-			echo '@@"'$( PathUnixToWin "${dbDefinesScriptFile}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-			# add "default" schema defines
-			echo '' >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-			cat "${dbDefinesScriptFile}" \
-				| ${local_gawk} -v "schemaId=${l_schema_id}" '
-					BEGIN {
-						schemaIdLen = length(schemaId);
-					}
-
-					substr($0, 1, schemaIdLen+1+7) == "define " schemaId "_" {
-							print "define default_" substr($0, schemaIdLen+2+7);
-						}
-				' \
-				>> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-			[ "${l_sqlplus_defines_flag}" = "N" ] && definesFlag=off || definesFlag=on
-
-			cat >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				prompt --- turning SQL*Plus defines "${definesFlag}"
-				set define ${definesFlag}
-
-				prompt --- running the script "${l_script_folder}/${l_script_file}" (ID "${l_id_script}", execution ID "${l_id_script_execution}")
-
-			EOF
-
-			echo '@@"'$( PathUnixToWin "${DeploySrcRoot}/${l_script_folder}/${l_script_file}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-			cat >> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				set autoprint off
-				set autotrace off
-				set echo on
-				set define on
-				set escape off
-				set feedback on
-				set heading on
-				set headsep on
-				set linesize 32767
-				set serveroutput on size unlimited format truncated
-				set sqlbl on
-				set sqlterminator ';'
-				set termout off
-				set trimout on
-				set trimspool on
-				set verify on
-				set wrap on
-
-				prompt --- DONE
-				commit;
-
-				spool off
-				exit success
-			EOF
-
-			scriptReturnCode=0
-
-			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" )
-			"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
-				2> "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.stderr.out" \
-				|| scriptReturnCode=$?
+			scriptReturnCode=$?
 
 			# ----------------------------------------------------------------------------------------------
+
 			if [ "${scriptReturnCode}" -eq 0 ] ; then
 				InfoMessage "        completion check"
-
-				l_lines_OK=$(
-					${local_grep} -Ei \
-						"^(it's\s*\.\.\.|---\s*(setting\s+up\s+deployment\s+config\s+vars\s*$|turning\s+sql\*plus\s+defines|running\s+the\s+script|done\s*$))" \
-						"${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.log" \
-						| wc -l
-				) || ThrowException "Spool file missing?"
-
-				[ "$l_lines_OK" -eq 5 ] || ThrowException "Incomplete script execution! Trailing slash missing?"
+				. "${CommonsPath}/${l_script_tech}/script_exec.sh" \
+					post-run-check \
+					"${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			fi
 
 			# ----------------------------------------------------------------------------------------------
+
 			InfoMessage "        post-phase"
 
-			cat > "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-				whenever sqlerror exit 1 rollback
-				whenever oserror exit 2 rollback
+			. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" \
+				post-phase-run \
+				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
+				"${cfg_deploy_repo_db}"
 
-				set autoprint off
-				set autotrace off
-				set echo on
-				set define off
-				set escape off
-				set feedback on
-				set heading on
-				set headsep on
-				set linesize 32767
-				set sqlbl off
-				set termout off
-				set trimout on
-				set trimspool on
-				set verify on
-				set wrap on
-
-				set exitcommit on
-
-			EOF
-
-			echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-			cat >> "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				prompt --- updating deployment repository (post-phase)
-
-				var l_script_spool nclob;
-				var l_script_stderr nclob;
-
-				begin
-					dbms_lob.createTemporary(
-						lob_loc => :l_script_spool,
-						cache => true,
-						dur => dbms_lob.session
-					);
-					dbms_lob.createTemporary(
-						lob_loc => :l_script_stderr,
-						cache => true,
-						dur => dbms_lob.session
-					);
-				end;
-				/
-
-			EOF
-
-			cat "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.log" \
-				| ${local_gawk} -v apostrophe="'" '
-					{
-						row = $0;
-						gsub(/\s+$/, "", row);
-						len = length(row);
-						if (len >= 7400) {
-							len = 7399;
-							row = substr(row, 1, len);
-						}
-						print "exec dbms_lob.writeAppend(:l_script_spool, " (len+1) ", q" apostrophe "[" row "]" apostrophe "||chr(10));";
-					}
-				' \
-				>> "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-			cat "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.stderr.out" \
-				| ${local_gawk} -v apostrophe="'" '
-					{
-						row = $0;
-						gsub(/\s+$/, "", row);
-						len = length(row);
-						if (len >= 7400) {
-							len = 7399;
-							row = substr(row, 1, len);
-						}
-						print "exec dbms_lob.writeAppend(:l_script_spool, " (len+1) ", q" apostrophe "[" row "]" apostrophe "||chr(10));";
-					}
-				' \
-				>> "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-			cat >> "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				update t_db_script_execution FX
-				set FX.fip_finish = current_timestamp,
-				    FX.num_return_code = ${scriptReturnCode},
-				    FX.txt_script_spool = :l_script_spool,
-				    FX.txt_script_stderr = :l_script_stderr
-				where FX.id_db_script_execution = ${l_id_script_execution};
-
-				commit;
-
-				exit success
-			EOF
-
-			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" )
-			"${SqlPlusBinary}" -L -S ${cfg_deploy_repo_db} @"${l_sqlplus_script_file}" \
-				|| ThrowException "SQL*Plus failed"
+			scriptReturnCode=$?
 
 			# ----------------------------------------------------------------------------------------------
 
@@ -693,14 +459,8 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 			fi
 
 			[ -z "${DEBUG}" ] && (
-				rm "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-				rm "${TmpPath}/${Env}.script_exec_finish.${l_id_script}-${l_id_script_execution}.${RndToken}.log"
-
-				rm "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.stderr.out"
-				rm "${TmpPath}/${Env}.script_exec_exec.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-
-				rm "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-				rm "${TmpPath}/${Env}.script_exec_start.${l_id_script}-${l_id_script_execution}.${RndToken}.log"
+				. "${CommonsPath}/${l_script_tech}/script_exec.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			)
 
 		# ----------------------------------------------------------------------------------------------
