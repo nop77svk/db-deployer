@@ -418,8 +418,6 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
 				"${cfg_deploy_repo_db}"
 
-			scriptReturnCode=$?
-
 			# ----------------------------------------------------------------------------------------------
 
 			InfoMessage "        execution"
@@ -448,9 +446,8 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 			. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" \
 				post-phase-run \
 				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
-				"${cfg_deploy_repo_db}"
-
-			scriptReturnCode=$?
+				"${cfg_deploy_repo_db}" \
+				"${scriptReturnCode}"
 
 			# ----------------------------------------------------------------------------------------------
 
@@ -467,60 +464,11 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 		else
 			InfoMessage "        fake execution for deployment repository synchronization"
 
-			scriptReturnCode=0
-
-			cat > "${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-				whenever sqlerror exit 1 rollback
-				whenever oserror exit 2 rollback
-
-				set autoprint off
-				set autotrace off
-				set echo on
-				set define off
-				set escape off
-				set feedback on
-				set heading on
-				set headsep on
-				set linesize 32767
-				set sqlbl off
-				set termout off
-				set trimout on
-				set trimspool on
-				set verify on
-				set wrap on
-
-				set exitcommit on
-
-			EOF
-
-			echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
-			fakeMsg="note: a faked execution of \"${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.sql\""
-
-			cat >> "${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" <<-EOF
-
-				prompt --- updating deployment repository (fake execution)
-
-				update t_db_script_execution FX
-				set FX.fip_start = current_timestamp,
-					FX.fip_finish = current_timestamp,
-				    FX.num_return_code = ${scriptReturnCode},
-				    FX.txt_script_spool = '${fakeMsg}',
-				    FX.txt_script_stderr = null
-				where FX.id_db_script_execution = ${l_id_script_execution};
-
-				commit;
-
-				exit success
-			EOF
-
-			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.sql" )
-			"${SqlPlusBinary}" -L -S ${cfg_deploy_repo_db} @"${l_sqlplus_script_file}" \
-				2> "${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.stderr.out" \
-				|| ThrowException "SQL*Plus execution exited with status of $?"
+			. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" fake-exec "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+			scriptReturnCode=$?
 
 			[ -z "${DEBUG}" ] && (
-				rm "${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.stderr.out"
-				rm "${TmpPath}/${Env}.script_exec_fake.${l_id_script}-${l_id_script_execution}.${RndToken}.sql"
+				. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" fake-exec-cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			)
 		fi
 	done

@@ -72,7 +72,99 @@ case "${x_action}" in
 		;;
 
 	(post-phase-run)
+		x_connect="$5"
+		x_script_return_code="$6"
+
 		cat > "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+			whenever sqlerror exit 1 rollback
+			whenever oserror exit 2 rollback
+
+			set autoprint off
+			set autotrace off
+			set echo on
+			set define off
+			set escape off
+			set feedback on
+			set heading on
+			set headsep on
+			set linesize 32767
+			set sqlbl off
+			set termout off
+			set trimout on
+			set trimspool on
+			set verify on
+			set wrap on
+
+			set exitcommit on
+			set serveroutput on size unlimited format truncated
+
+		EOF
+
+		echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log" )'"' >> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+
+		cat >> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+
+			prompt --- updating deployment repository (post-phase)
+
+			var l_script_spool nclob;
+			var l_script_stderr nclob;
+
+			update t_db_script_execution FX
+			set FX.fip_finish = current_timestamp,
+			    FX.num_return_code = ${x_script_return_code},
+			    FX.txt_script_spool = empty_clob(),
+			    FX.txt_script_stderr = empty_clob()
+			where FX.id_db_script_execution = ${x_id_script_execution}
+			returning txt_script_spool, txt_script_stderr
+				into :l_script_spool, :l_script_stderr
+			;
+
+		EOF
+
+		cat "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log" \
+			| gzip -9cn \
+			| base64 \
+			| ${local_gawk} \
+				-f "${CommonsPath}/tech.oracle/gzip_base64_to_sqlplus.awk" \
+				-v 'outputClobVarName=l_script_spool' \
+			>> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+
+		cat "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.stderr.out" \
+			| gzip -9cn \
+			| base64 \
+			| ${local_gawk} \
+				-f "${CommonsPath}/tech.oracle/gzip_base64_to_sqlplus.awk" \
+				-v 'outputClobVarName=l_script_stderr' \
+			>> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+
+		cat >> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+
+			commit;
+
+			exit success
+		EOF
+
+		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" )
+		"${SqlPlusBinary}" -L -S ${cfg_deploy_repo_db} @"${l_sqlplus_script_file}" \
+			|| ThrowException "SQL*Plus failed"
+
+		return ${scriptReturnCode}
+		;;
+
+	(pre-phase-cleanup|cleanup)
+		rm "${TmpPath}/${Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		rm "${TmpPath}/${Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log"
+		;;&
+
+	(post-phase-cleanup|cleanup)
+		rm "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		rm "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log"
+		;;
+
+	(fake-exec)
+		scriptReturnCode=0
+
+		cat > "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
 			whenever oserror exit 2 rollback
 
@@ -96,90 +188,36 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log" )'"' >> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log" )'"' >> "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		fakeMsg="note: a faked execution of \"${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql\""
 
-		cat >> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+		cat >> "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
 
-			prompt --- updating deployment repository (post-phase)
-
-			var l_script_spool nclob;
-			var l_script_stderr nclob;
-
-			begin
-				dbms_lob.createTemporary(
-					lob_loc => :l_script_spool,
-					cache => true,
-					dur => dbms_lob.session
-				);
-				dbms_lob.createTemporary(
-					lob_loc => :l_script_stderr,
-					cache => true,
-					dur => dbms_lob.session
-				);
-			end;
-			/
-
-		EOF
-
-		cat "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log" \
-			| ${local_gawk} -v apostrophe="'" '
-				{
-					row = $0;
-					gsub(/\s+$/, "", row);
-					len = length(row);
-					if (len >= 7400) {
-						len = 7399;
-						row = substr(row, 1, len);
-					}
-					print "exec dbms_lob.writeAppend(:l_script_spool, " (len+1) ", q" apostrophe "[" row "]" apostrophe "||chr(10));";
-				}
-			' \
-			>> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
-
-		cat "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.stderr.out" \
-			| ${local_gawk} -v apostrophe="'" '
-				{
-					row = $0;
-					gsub(/\s+$/, "", row);
-					len = length(row);
-					if (len >= 7400) {
-						len = 7399;
-						row = substr(row, 1, len);
-					}
-					print "exec dbms_lob.writeAppend(:l_script_spool, " (len+1) ", q" apostrophe "[" row "]" apostrophe "||chr(10));";
-				}
-			' \
-			>> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
-
-		cat >> "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+			prompt --- updating deployment repository (fake execution)
 
 			update t_db_script_execution FX
-			set FX.fip_finish = current_timestamp,
+			set FX.fip_start = current_timestamp,
+				FX.fip_finish = current_timestamp,
 			    FX.num_return_code = ${scriptReturnCode},
-			    FX.txt_script_spool = :l_script_spool,
-			    FX.txt_script_stderr = :l_script_stderr
-			where FX.id_db_script_execution = ${l_id_script_execution};
+			    FX.txt_script_spool = '${fakeMsg}',
+			    FX.txt_script_stderr = null
+			where FX.id_db_script_execution = ${x_id_script_execution};
 
 			commit;
 
 			exit success
 		EOF
 
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" )
+		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" )
 		"${SqlPlusBinary}" -L -S ${cfg_deploy_repo_db} @"${l_sqlplus_script_file}" \
-			|| ThrowException "SQL*Plus failed"
+			2> "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.stderr.out" \
+			|| ThrowException "SQL*Plus execution exited with status of $?"
 
 		return ${scriptReturnCode}
 		;;
 
-	(pre-phase-cleanup|cleanup)
-		rm "${TmpPath}/${Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
-		rm "${TmpPath}/${Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log"
-		;;&
-
-	(post-phase-cleanup|cleanup)
-		rm "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
-		rm "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log"
-		;;
+	(fake-exec-cleanup)
+		rm "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.stderr.out"
+		rm "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
 
 esac
