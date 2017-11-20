@@ -141,4 +141,6 @@ case "${x_action}" in
 		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
 		;;
 
+	(*)
+		ThrowException "Unmatched action \"${x_action}\""
 esac

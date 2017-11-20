@@ -167,8 +167,7 @@ Here=$( PathWinToUnix "${Here}" )
 InfoMessage "    OK: Path conversion routines set up"
 
 export ORACLE_HOME="${ORACLE_HOME:-${cfg_oracle_home}}"
-. "${CommonsPath}/oracle_home_utils.sh"
-
+. "${CommonsPath}/tech.oracle/prepare.sh"
 InfoMessage "    Oracle home in use = ${ORACLE_HOME}"
 
 # ================================================================================================
@@ -220,160 +219,33 @@ fi
 
 if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "sync" -o "${Action}" = "delta-prep" ] ; then
 	InfoMessage "    Merging the list of found script files to (unfinished increments in) deployment repository"
+
 	cd "${TmpPath}"
-
-	cat > "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
-		whenever sqlerror exit 1 rollback
-		whenever oserror exit 2 rollback
-
-		set trimspool on
-		set trimout on
-		set linesize 32767
-		set termout off
-		set echo off
-		set feedback on
-		spool "${Env}.merge_increments_to_repo.${RndToken}.log"
-
-		col "It's ..." format a40
-		select user||'@'||global_name as "It's ..." from global_name;
-
-		prompt --- loading the list of script files to DB
-
-		set feedback off
-
-		select count(1) as temp_records_before from tt_db_full_inc_script_path;
-
-	EOF
-
-	cat "${TmpPath}/${Env}.script_full_paths.${RndToken}.tmp" \
-		| ${local_gawk} -f "${CommonsPath}/full_script_list_to_sql_inserts.awk" \
-		>> "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql"
-
-	cat >> "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
-
-		select count(1) as temp_records_after from tt_db_full_inc_script_path;
-
-		set feedback on
-
-	EOF
-
-	echo '@@"'$( PathUnixToWin "${CommonsPath}/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql"
-
-	cat >> "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
-		prompt --- DONE synchronizing repository
-
-		commit;
-
-		spool off
-		exit success
-	EOF
-
-	l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql" )
-	"${SqlPlusBinary}" -L -S ${cfg_deploy_repo_db} @"${l_sqlplus_script_file}" \
-		|| ThrowException "SQL*Plus failed"
-
-	[ -z "${DEBUG}" ] && (
-		rm "${TmpPath}/${Env}.script_full_paths.${RndToken}.tmp"
-		rm "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql"
-	)
+	. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
+		merge-inc \
+		"${RndToken}" "${cfg_deploy_repo_db}"
 fi
 
 # ------------------------------------------------------------------------------------------------
 
 if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "sync" -o "${Action}" = "delta-prep" ] ; then
 	InfoMessage "    Setting up a deployment run"
+
 	cd "${DeploySrcRoot}"
-
-	cat > "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql" <<-EOF
-		whenever sqlerror exit 1 rollback
-		whenever oserror exit 2 rollback
-
-		set trimspool on
-		set trimout on
-		set linesize 32767
-		set termout off
-		set echo off
-		set feedback on
-
-	EOF
-
-	echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-	echo '' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-
-	echo 'prompt --- loading deployment targets to tmp' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-	declare | ${local_grep} -E '^(dpltgt|dbgrp)_.*=' | ${local_sed} "s/^.*$/insert into tt_db_deploy_tgt (txt_config_var_assignment) values (q'{&}');/gi" >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-	echo '' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-
-	echo 'prompt --- calling set_up_deployment_run.sql' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-	if [ "${Action}" = "sync" ] ; then
-		echo '@@"'$( PathUnixToWin "${CommonsPath}/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-	else
-		echo '@@"'$( PathUnixToWin "${CommonsPath}/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-	fi
-	echo '' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-
-	cat >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql" <<-EOF
-		prompt --- DONE setting up a deployment run
-
-		commit;
-
-		spool off
-		exit success
-	EOF
-
-	l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql" )
-	"${SqlPlusBinary}" -L -S ${cfg_deploy_repo_db} @"${l_sqlplus_script_file}" \
-		|| ThrowException "SQL*Plus failed"
-
-	[ -z "${DEBUG}" ] && (
-		rm "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-	)
+	. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
+		create-run \
+		"${RndToken}" "${cfg_deploy_repo_db}" "${Action}"
 fi
 
 # ------------------------------------------------------------------------------------------------
 
 if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "delta-prep" ] ; then
 	InfoMessage "    Fetching the ultimate list of scripts to run from repository"
+
 	cd "${DeploySrcRoot}"
-
-	cat > "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.sql" <<-EOF
-		whenever sqlerror exit 1 rollback
-		whenever oserror exit 2 rollback
-
-		set autoprint off
-		set autotrace off
-		set echo off
-		set define off
-		set feedback off
-		set heading off
-		set headsep off
-		set linesize 2048
-		set newpage none
-		set recsep off
-		set tab on
-		set termout off
-		set trimout on
-		set trimspool on
-		set verify off
-		set wrap off
-		set sqlterminator ';'
-
-		set exitcommit off
-
-	EOF
-
-	echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.tmp" )'"' >> "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.sql"
-	echo '@@"'$( PathUnixToWin "${CommonsPath}/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.sql"
-
-	cat >> "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.sql" <<-EOF
-
-		spool off
-		exit success
-	EOF
-
-	l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.sql" )
-	"${SqlPlusBinary}" -L -S ${cfg_deploy_repo_db} @"${l_sqlplus_script_file}" \
-		|| ThrowException "SQL*Plus failed"
+	. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
+		get-list-to-exec \
+		"${RndToken}" "${cfg_deploy_repo_db}"
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -413,7 +285,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			InfoMessage "        pre-phase"
 
-			. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" \
+			. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
 				pre-phase-run \
 				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
 				"${cfg_deploy_repo_db}"
@@ -443,7 +315,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			InfoMessage "        post-phase"
 
-			. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" \
+			. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
 				post-phase-run \
 				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
 				"${cfg_deploy_repo_db}" \
@@ -457,22 +329,19 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			[ -z "${DEBUG}" ] && (
 				. "${CommonsPath}/${l_script_tech}/script_exec.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
-				. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			)
 
 		# ----------------------------------------------------------------------------------------------
 		else
 			InfoMessage "        fake execution for deployment repository synchronization"
 
-			. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" fake-exec "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+			. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" fake-exec "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			scriptReturnCode=$?
-
-			[ -z "${DEBUG}" ] && (
-				. "${CommonsPath}/${cfg_deploy_repo_tech}/repo_update.sh" fake-exec-cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
-			)
 		fi
 	done
 
+	# note: the following catches the explicit exception thrown above
 	scriptReturnCode=$?
 	[ ${scriptReturnCode} -gt 0 ] && exit ${scriptReturnCode}
 
