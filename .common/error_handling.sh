@@ -23,8 +23,8 @@ function InfoMessage()
 }
 
 trap 'ThrowException "Uncaught exception!"' ERR
-trap 'ThrowException "EWS shell script KILLed"' KILL
-trap 'ThrowException "EWS shell script TERMed"' TERM
+trap 'ThrowException "DB-deployer shell script KILLed"' KILL
+trap 'ThrowException "DB-deployer shell script TERMed"' TERM
 
 function ThrowException()
 {
@@ -45,7 +45,7 @@ function ThrowException()
 				echo "${msg}"
 			done
 			echo Command return code = ${exitStatus}
-		) | mailx -s "ERROR: EWS Shell script failure" -r ${ErrorNotificationMailSender+EWS} ${ErrorNotificationMailRecipients}
+		) | mailx -s "ERROR: DB deployment failure" -r ${ErrorNotificationMailSender+DBDeploy} ${ErrorNotificationMailRecipients}
 	fi
 
 	echo ------------------------------------------------------------------------------

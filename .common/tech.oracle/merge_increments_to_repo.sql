@@ -6,8 +6,8 @@ insert into tt_db_full_inc_script_path (txt_script) values (q'{data_fixes/201508
 insert into tt_db_full_inc_script_path (txt_script) values (q'{data_fixes/20150814-1534;dvf_dvt_discrepancies/002-v_all_generic_ds;default.sql}');
 insert into tt_db_full_inc_script_path (txt_script) values (q'{data_fixes/20150814-1534;dvf_dvt_discrepancies/003-v_all_indicators;default.sql}');
 insert into tt_db_full_inc_script_path (txt_script) values (q'{data_fixes/20150814-1534;dvf_dvt_discrepancies/005-reset behaviour of TOVR_AGR;default.sql}');
-insert into tt_db_full_inc_script_path (txt_script) values (q'{db_resync/20150814-0935/002-t_ews_signal_view;default.sql}');
-insert into tt_db_full_inc_script_path (txt_script) values (q'{db_resync/20150814-0935/003-t_ews_task_view;default.sql}');
+insert into tt_db_full_inc_script_path (txt_script) values (q'{db_resync/20150814-0935/002-t_signal_view;default.sql}');
+insert into tt_db_full_inc_script_path (txt_script) values (q'{db_resync/20150814-0935/003-t_task_view;default.sql}');
 insert into tt_db_full_inc_script_path (txt_script) values (q'{db_resync/20150814-0935/004-utl_ind_intfc_gen;default.pck}');
 insert into tt_db_full_inc_script_path (txt_script) values (q'{db_resync/20150814-0935/005-v_all_generic_ds_view;default.sql}');
 insert into tt_db_full_inc_script_path (txt_script) values (q'{db_resync/20150814-0935/006-deploy2_repo_columns;default.sql}');
