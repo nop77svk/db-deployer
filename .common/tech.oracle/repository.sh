@@ -291,6 +291,7 @@ case "${x_action}" in
 		[ -z "${DEBUG}" ] && (
 			rm "${TmpPath}/${Env}.script_full_paths.${x_rnd_token}.tmp"
 			rm "${TmpPath}/${Env}.merge_increments_to_repo.${x_rnd_token}.sql"
+			rm "${TmpPath}/${Env}.merge_increments_to_repo.${x_rnd_token}.log"
 		)
 		;;
 
@@ -384,6 +385,7 @@ case "${x_action}" in
 	
 		[ -z "${DEBUG}" ] && (
 			rm "${TmpPath}/${Env}.set_up_deployment_run.${x_rnd_token}.sql"
+			rm "${TmpPath}/${Env}.set_up_deployment_run.${x_rnd_token}.log"
 		)
 		;;
 

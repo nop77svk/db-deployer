@@ -117,10 +117,7 @@ GlobalPluginsPath="${ScriptPath}/.plugin"
 
 InfoMessage "Further configuring the deployer"
 
-if [ -z "${ORACLE_HOME:-}" -a -z "${cfg_oracle_home:-}" ] ; then
-	ThrowException 'Neither the ORACLE_HOME env. var. nor the "cfg_oracle_home" config var. is set'
-fi
-
+# 2do! this should be technology-dependent
 cfg_deploy_repo_tech=tech.${dpltgt_deploy_repo_tech:-oracle}
 cfg_deploy_repo_db=${dpltgt_deploy_repo_user}/${dpltgt_deploy_repo_password}@${dpltgt_deploy_repo_db} || ThrowException "Deployment repository DB-config vars not set"
 InfoMessage "    deployment repository = \"${dpltgt_deploy_repo_user}/******@${dpltgt_deploy_repo_db}\""
@@ -157,36 +154,32 @@ rm ${Env}.*.tbz2 2> /dev/null || InfoMessage '    Note: No TBZ2 files to clean u
 InfoMessage "Shell/OS-specific setup"
 
 . "${CommonsPath}/os_specific_utils.sh"
-
 InfoMessage "    You are on \"${OStype}\""
 
 TmpPath=$( PathWinToUnix "${TmpPath}" )
 ScriptPath=$( PathWinToUnix "${ScriptPath}" )
 Here=$( PathWinToUnix "${Here}" )
 
-InfoMessage "    OK: Path conversion routines set up"
+# ------------------------------------------------------------------------------------------------
 
-export ORACLE_HOME="${ORACLE_HOME:-${cfg_oracle_home}}"
-. "${CommonsPath}/tech.oracle/prepare.sh"
-InfoMessage "    Oracle home in use = ${ORACLE_HOME}"
+InfoMessage "Preparing deployment technologies"
+
+set \
+	| ${local_grep} -Ei '^dpltgt_.*_tech\s*=' \
+	| ${local_sed} 's/^dpltgt_.*_tech\s*=\s*\(.*\)\s*$/\1/g' \
+	| ${local_sort} -u \
+	| ${local_gawk} '
+		{
+			print "InfoMessage \"    " $0 "\"";
+			print ". \"${CommonsPath}/tech." $0 "/technology.sh\" initialize";
+		}' \
+	> "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp"
+
+. "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp"
+
+[ -z "${DEBUG}" ] && rm "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp"
 
 # ================================================================================================
-
-if [ "${Action}" != "help" ] ; then
-	InfoMessage "Generating the SQL*Plus defines script"
-
-	dbDefinesScriptFile="${TmpPath}/${Env}.deployment_db_defines.${RndToken}.sql"
-
-	set \
-		| ${local_grep} -Ei '^dpltgt_' \
-		| ${local_sed} 's/^dpltgt_\(.*\)\s*=\s*\(.*\)\s*$/define \1 = \2/g' \
-		| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
-		>> "${dbDefinesScriptFile}"
-
-	InfoMessage "    defines file = \"${dbDefinesScriptFile}\""
-fi
-
-# ------------------------------------------------------------------------------------------------
 
 if [ "${Action}" != "help" ] ; then
 	InfoMessage "Executing pre-deployment plugins"
@@ -271,6 +264,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 		# ----------------------------------------------------------------------------------------------
 
 		if [ "${fakeExec}" = "no" ] ; then
+			# 2do! move these to technology-specific commons
 			l_script_tech_var=dpltgt_${l_schema_id}_tech
 			l_db_user_var=dpltgt_${l_schema_id}_user
 			l_db_password_var=dpltgt_${l_schema_id}_password
@@ -430,7 +424,20 @@ fi
 if [ "${Action}" != "help" ] ; then
 	InfoMessage "CleanUp"
 
-	[ -z "${DEBUG}" ] && rm "${dbDefinesScriptFile}"
+	set \
+		| ${local_grep} -Ei '^dpltgt_.*_tech\s*=' \
+		| ${local_sed} 's/^dpltgt_.*_tech\s*=\s*\(.*\)\s*$/\1/g' \
+		| ${local_sort} -u \
+		| ${local_gawk} '
+			{
+				print "InfoMessage \"    for " $0 "\"";
+				print ". \"${CommonsPath}/tech." $0 "/technology.sh\" teardown";
+			}' \
+		> "${TmpPath}/${Env}.cleanup.${RndToken}.tmp"
+
+	. "${TmpPath}/${Env}.cleanup.${RndToken}.tmp"
+
+	[ -z "${DEBUG}" ] && rm "${TmpPath}/${Env}.cleanup.${RndToken}.tmp"
 fi
 
 # ------------------------------------------------------------------------------------------------
