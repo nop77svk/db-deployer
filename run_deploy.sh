@@ -254,16 +254,17 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 		InfoMessage "    script \"${l_script_folder}/${l_script_file}\" (ID \"${l_id_script}\", exec \"${l_id_script_execution}\") in schema \"${l_schema_id}\""
 
 		if ( echo ",${cfg_target_no_run:-}," | ${local_grep} -q ",${l_schema_id}," ) ; then
-			fakeExec=yes
+			l_is_fake_exec=yes
 		else if [ "${Action}" = "sync" ] ; then
-			fakeExec=yes
+			l_is_fake_exec=yes
 		else
-			fakeExec=no
+			l_is_fake_exec=no
 		fi ; fi
 
 		# ----------------------------------------------------------------------------------------------
 
-		if [ "${fakeExec}" = "no" ] ; then
+		# 2do! pass the l_add_info to both repository.sh and script_exec.sh
+		if [ "${l_is_fake_exec}" = "no" ] ; then
 			l_script_tech_var=dpltgt_${l_schema_id}_tech
 			l_script_tech=${!l_script_tech_var:-oracle}
 
@@ -283,11 +284,11 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 				"${l_schema_id}" \
 				"${l_script_folder}" "${l_script_file}"
 
-			scriptReturnCode=$?
+			l_script_return_code=$?
 
 			# ----------------------------------------------------------------------------------------------
 
-			if [ "${scriptReturnCode}" -eq 0 ] ; then
+			if [ "${l_script_return_code}" -eq 0 ] ; then
 				InfoMessage "        completion check"
 				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" \
 					post-run-check \
@@ -301,12 +302,12 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 				post-phase-run \
 				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
-				"${scriptReturnCode}"
+				"${l_script_return_code}"
 
 			# ----------------------------------------------------------------------------------------------
 
-			if [ ${scriptReturnCode} -gt 0 ] ; then
-				ThrowException "The most recent increment script exited with status of ${scriptReturnCode}"
+			if [ ${l_script_return_code} -gt 0 ] ; then
+				ThrowException "The most recent increment script exited with status of ${l_script_return_code}"
 			fi
 
 			[ -z "${DEBUG}" ] && (
@@ -319,13 +320,13 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 			InfoMessage "        fake execution for deployment repository synchronization"
 
 			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" fake-exec "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
-			scriptReturnCode=$?
+			l_script_return_code=$?
 		fi
 	done
 
 	# note: the following catches the explicit exception thrown above
-	scriptReturnCode=$?
-	[ ${scriptReturnCode} -gt 0 ] && exit ${scriptReturnCode}
+	l_script_return_code=$?
+	[ ${l_script_return_code} -gt 0 ] && exit ${l_script_return_code}
 
 	unset IFS
 	[ -z "${DEBUG}" ] && rm "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.sql"

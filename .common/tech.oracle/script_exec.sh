@@ -34,11 +34,13 @@ case "${x_action}" in
 		fi
 		
 		# determine the "defines" flag
-		l_sqlplus_defines_flag=on
 		l_script_file_ext=${x_script_file##*.}
 		case "${l_script_file_ext}" in
 			pkg|spc|bdy|pck|pks|pkb|typ|tps|tpb|trg|fnc|prc)
 				l_sqlplus_defines_flag=off
+				;;
+			*)
+				l_sqlplus_defines_flag=on
 				;;
 		esac
 
