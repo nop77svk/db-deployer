@@ -15,8 +15,14 @@ case "${x_action}" in
 		x_connect="$5"
 		x_script_folder="$6"
 		x_script_file="$7"
-		x_db_defines_file="$8"
-		x_sqlplus_defines_flag="$9"
+
+		l_sqlplus_defines_flag=on
+		l_script_file_ext=${x_script_file##*.}
+		case "${l_script_file_ext}" in
+			pkg|spc|bdy|pck|pks|pkb|typ|tps|tpb|trg|fnc|prc)
+				l_sqlplus_defines_flag=off
+				;;
+		esac
 
 		cat > "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
@@ -59,11 +65,11 @@ case "${x_action}" in
 
 		EOF
 
-		echo '@@"'$( PathUnixToWin "${x_db_defines_file}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		echo '@@"'$( PathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
 
 		# add "default" schema defines
 #		echo '' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
-#		cat "${x_db_defines_file}" \
+#		cat "${gOracle_dbDefinesScriptFile}" \
 #			| ${local_gawk} -v "schemaId=${l_schema_id}" '
 #				BEGIN {
 #					schemaIdLen = length(schemaId);
@@ -75,12 +81,10 @@ case "${x_action}" in
 #			' \
 #			>> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
 
-		[ "${x_sqlplus_defines_flag}" = "N" ] && definesFlag=off || definesFlag=on
-
 		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
 
-			prompt --- turning SQL*Plus defines "${definesFlag}"
-			set define ${definesFlag}
+			prompt --- turning SQL*Plus defines "${l_sqlplus_defines_flag}"
+			set define ${l_sqlplus_defines_flag}
 
 			prompt --- running the script "${x_script_folder}/${x_script_file}" (ID "${x_id_script}", execution ID "${x_id_script_execution}")
 

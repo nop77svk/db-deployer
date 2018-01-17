@@ -24,19 +24,19 @@ case "$x_action" in
 		export SqlPlusBinary=$( PathWinToUnix "${ORACLE_HOME}" )/bin/sqlplus
 		InfoMessage "        SQL*Plus binary = \"${SqlPlusBinary}\""
 		
-		export dbDefinesScriptFile="${TmpPath}/${Env}.deployment_db_defines.${RndToken}.sql"
-		InfoMessage "        SQL*Plus defines file = \"${dbDefinesScriptFile}\""
+		export gOracle_dbDefinesScriptFile="${TmpPath}/${Env}.deployment_db_defines.${RndToken}.sql"
+		InfoMessage "        SQL*Plus defines file = \"${gOracle_dbDefinesScriptFile}\""
 		
 		set \
 			| ${local_grep} -Ei '^dpltgt_' \
 			| ${local_sed} 's/^dpltgt_\(.*\)\s*=\s*\(.*\)\s*$/define \1 = \2/g' \
 			| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
-			>> "${dbDefinesScriptFile}"
+			>> "${gOracle_dbDefinesScriptFile}"
 		
 		InfoMessage "        done"
 		;;
 
 	(teardown)
-		rm "${dbDefinesScriptFile}"
+		rm "${gOracle_dbDefinesScriptFile}"
 		;;
 esac

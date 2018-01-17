@@ -249,8 +249,10 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 	IFS='|'
 	cat "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.tmp" \
-		| while read -r l_id_script_execution l_num_order l_id_script l_id_increment l_schema_id l_script_folder l_script_file l_sqlplus_defines_flag || break
+		| tr '\r' '\n' \
+		| while read -r l_id_script_execution l_num_order l_id_script l_id_increment l_schema_id l_script_folder l_script_file l_add_info || break
 	do
+		[ -z "${l_id_script_execution}" ] && continue
 		InfoMessage "    script \"${l_script_folder}/${l_script_file}\" (ID \"${l_id_script}\", exec \"${l_id_script_execution}\") in schema \"${l_schema_id}\""
 
 		if ( echo ",${cfg_target_no_run:-}," | ${local_grep} -q ",${l_schema_id}," ) ; then
@@ -292,7 +294,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 				run \
 				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
 				"${l_db_user}/${l_db_password}@${l_db_db}" \
-				"${l_script_folder}" "${l_script_file}" "${dbDefinesScriptFile}" "${l_sqlplus_defines_flag}"
+				"${l_script_folder}" "${l_script_file}"
 
 			scriptReturnCode=$?
 

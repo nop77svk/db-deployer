@@ -9,7 +9,7 @@ with last_deploy$ as (
 ),
 output$ as (
     select FX.id_db_script_execution, FX.num_order, F.id_db_script, F.id_db_increment, I.txt_folder, F.txt_script_file, nvl(FX.nam_deploy_target,'???') as nam_schema_id,
-        FX.num_return_code, FX.fip_finish, FX.txt_script_spool, FX.txt_script_stderr, CX.yn_sqlplus_defines,
+        FX.num_return_code, FX.fip_finish, FX.txt_script_spool, FX.txt_script_stderr,
         count(num_return_code) over (partition by X.last_id_db_deployment order by FX.num_order asc rows between current row and unbounded following) as next_unfinished
     from last_deploy$ X
         join t_db_script_execution FX
@@ -22,7 +22,7 @@ output$ as (
         join c_db_script_file_extension CX
             on CX.cod_file_extension = F.cod_file_ext
 )
-select id_db_script_execution||'|'||num_order||'|'||id_db_script||'|'||id_db_increment||'|'||nam_schema_id||'|'||txt_folder||'|'||txt_script_file||'|'||yn_sqlplus_defines
+select id_db_script_execution||'|'||num_order||'|'||id_db_script||'|'||id_db_increment||'|'||nam_schema_id||'|'||txt_folder||'|'||txt_script_file
 from output$
 where num_return_code is null and next_unfinished = 0
 order by num_order
