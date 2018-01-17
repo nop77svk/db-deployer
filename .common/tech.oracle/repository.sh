@@ -14,7 +14,6 @@ case "${x_action}" in
 	(pre-phase-run)
 		x_id_script="$3"
 		x_id_script_execution="$4"
-		x_connect="$5"
 
 		cat > "${TmpPath}/${Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
@@ -22,7 +21,7 @@ case "${x_action}" in
 
 			-- phase: pre-phase
 
-			connect ${x_connect}
+			connect ${gOracle_repoDbConnect}
 
 			set autoprint off
 			set autotrace off
@@ -76,8 +75,7 @@ case "${x_action}" in
 	(post-phase-run)
 		x_id_script="$3"
 		x_id_script_execution="$4"
-		x_connect="$5"
-		x_script_return_code="$6"
+		x_script_return_code="$5"
 
 		cat > "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
@@ -149,7 +147,7 @@ case "${x_action}" in
 		EOF
 
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" )
-		"${SqlPlusBinary}" -L -S ${x_connect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 
 		return ${scriptReturnCode}
@@ -174,7 +172,6 @@ case "${x_action}" in
 	(fake-exec)
 		x_id_script="$3"
 		x_id_script_execution="$4"
-		x_connect="$5"
 
 		scriptReturnCode=0
 
@@ -223,7 +220,7 @@ case "${x_action}" in
 		EOF
 
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" )
-		"${SqlPlusBinary}" -L -S ${x_connect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			2> "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.stderr.out" \
 			|| ThrowException "SQL*Plus execution exited with status of $?"
 
@@ -236,8 +233,6 @@ case "${x_action}" in
 		;;
 
 	(merge-inc)
-		x_connect="$3"
-
 		cat > "${TmpPath}/${Env}.merge_increments_to_repo.${x_rnd_token}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
 			whenever oserror exit 2 rollback
@@ -285,7 +280,7 @@ case "${x_action}" in
 		EOF
 	
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.merge_increments_to_repo.${x_rnd_token}.sql" )
-		"${SqlPlusBinary}" -L -S ${x_connect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 	
 		[ -z "${DEBUG}" ] && (
@@ -296,8 +291,6 @@ case "${x_action}" in
 		;;
 
 	(get-list-to-exec)
-		x_connect="$3"
-
 		cat > "${TmpPath}/${Env}.retrieve_the_deployment_setup.${x_rnd_token}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
 			whenever oserror exit 2 rollback
@@ -334,13 +327,12 @@ case "${x_action}" in
 		EOF
 	
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.retrieve_the_deployment_setup.${x_rnd_token}.sql" )
-		"${SqlPlusBinary}" -L -S ${x_connect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 		;;
 
 	(create-run)
-		x_connect="$3"
-		x_deploy_action="$4"
+		x_deploy_action="$3"
 
 		cat > "${TmpPath}/${Env}.set_up_deployment_run.${x_rnd_token}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
@@ -380,7 +372,7 @@ case "${x_action}" in
 		EOF
 	
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.set_up_deployment_run.${x_rnd_token}.sql" )
-		"${SqlPlusBinary}" -L -S ${x_connect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 	
 		[ -z "${DEBUG}" ] && (

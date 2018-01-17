@@ -25,6 +25,11 @@ else if [ ${OStype} = "cygwin" ] ; then
 	local_sort=/bin/sort
 fi ; fi
 
+[ -f "${local_find}" -o -f "${local_find}.exe" ] || ThrowException "FIND command not accessible"
+[ -f "${local_gawk}" -o -f "${local_gawk}.exe" ] || ThrowException "GAWK command not accessible"
+[ -f "${local_grep}" -o -f "${local_grep}.exe" ] || ThrowException "GREP command not accessible"
+[ -f "${local_sed}" -o -f "${local_sed}.exe" ] || ThrowException "SED command not accessible"
+[ -f "${local_sort}" -o -f "${local_sort}.exe" ] || ThrowException "SORT command not accessible"
 
 function CatPathUnixToWin()
 {

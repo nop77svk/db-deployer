@@ -117,17 +117,15 @@ GlobalPluginsPath="${ScriptPath}/.plugin"
 
 InfoMessage "Further configuring the deployer"
 
-# 2do! this should be technology-dependent
-cfg_deploy_repo_tech=tech.${dpltgt_deploy_repo_tech:-oracle}
-cfg_deploy_repo_db=${dpltgt_deploy_repo_user}/${dpltgt_deploy_repo_password}@${dpltgt_deploy_repo_db} || ThrowException "Deployment repository DB-config vars not set"
-InfoMessage "    deployment repository = \"${dpltgt_deploy_repo_user}/******@${dpltgt_deploy_repo_db}\""
-
 LogPath=$( FolderAbsolutePath "${LogPath:-${DeploySrcRoot}}" )
 TmpPath=$( FolderAbsolutePath "${TmpPath:-${DeploySrcRoot}}" )
 
 InfoMessage "    temporary files path = \"${TmpPath}\""
 InfoMessage "    log files path = \"${LogPath}\""
 InfoMessage "    environment id = \"${cfg_environment}\""
+
+DeployRepoTech=${dpltgt_deploy_repo_tech:-oracle}
+InfoMessage "    deployment repository technology = \"${DeployRepoTech}\""
 
 cd "${TmpPath}"
 
@@ -214,9 +212,9 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "sync" -o "${
 	InfoMessage "    Merging the list of found script files to (unfinished increments in) deployment repository"
 
 	cd "${TmpPath}"
-	. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
+	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 		merge-inc \
-		"${RndToken}" "${cfg_deploy_repo_db}"
+		"${RndToken}"
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -225,9 +223,9 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "sync" -o "${
 	InfoMessage "    Setting up a deployment run"
 
 	cd "${DeploySrcRoot}"
-	. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
+	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 		create-run \
-		"${RndToken}" "${cfg_deploy_repo_db}" "${Action}"
+		"${RndToken}" "${Action}"
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -236,9 +234,9 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "delta-prep" 
 	InfoMessage "    Fetching the ultimate list of scripts to run from repository"
 
 	cd "${DeploySrcRoot}"
-	. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
+	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 		get-list-to-exec \
-		"${RndToken}" "${cfg_deploy_repo_db}"
+		"${RndToken}"
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -281,10 +279,9 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			InfoMessage "        pre-phase"
 
-			. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
+			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 				pre-phase-run \
-				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
-				"${cfg_deploy_repo_db}"
+				"${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 
 			# ----------------------------------------------------------------------------------------------
 
@@ -311,10 +308,9 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			InfoMessage "        post-phase"
 
-			. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" \
+			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 				post-phase-run \
 				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
-				"${cfg_deploy_repo_db}" \
 				"${scriptReturnCode}"
 
 			# ----------------------------------------------------------------------------------------------
@@ -325,14 +321,14 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			[ -z "${DEBUG}" ] && (
 				. "${CommonsPath}/${l_script_tech}/script_exec.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
-				. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			)
 
 		# ----------------------------------------------------------------------------------------------
 		else
 			InfoMessage "        fake execution for deployment repository synchronization"
 
-			. "${CommonsPath}/${cfg_deploy_repo_tech}/repository.sh" fake-exec "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" fake-exec "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			scriptReturnCode=$?
 		fi
 	done
