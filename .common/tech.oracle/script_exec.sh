@@ -12,10 +12,28 @@ x_id_script_execution="$4"
 
 case "${x_action}" in
 	(run)
-		x_connect="$5"
+		x_schema_id="$5"
 		x_script_folder="$6"
 		x_script_file="$7"
 
+		# build the connection string
+		l_db_user_var=dpltgt_${l_schema_id}_user
+		l_db_password_var=dpltgt_${l_schema_id}_password
+		l_db_db_var=dpltgt_${l_schema_id}_db
+		l_db_as_sysdba=dpltgt_${l_schema_id}_as_sysdba
+
+		l_db_user=${!l_db_user_var}
+		l_db_password=${!l_db_password_var}
+		l_db_db=${!l_db_db_var}
+		l_db_as_sysdba=${!l_db_as_sysdba:-no}
+
+		if [ "${l_db_as_sysdba}" = "yes" ] ; then
+			l_connect="${l_db_user}/${l_db_password}@${l_db_db} as sysdba"
+		else
+			l_connect="${l_db_user}/${l_db_password}@${l_db_db}"
+		fi
+		
+		# determine the "defines" flag
 		l_sqlplus_defines_flag=on
 		l_script_file_ext=${x_script_file##*.}
 		case "${l_script_file_ext}" in
@@ -24,13 +42,14 @@ case "${x_action}" in
 				;;
 		esac
 
+		# execute the script
 		cat > "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
 			whenever oserror exit 2 rollback
 
 			-- phase: execution
 
-			connect ${x_connect}
+			connect ${l_connect}
 
 			set autoprint off
 			set autotrace off

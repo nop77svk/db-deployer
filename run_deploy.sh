@@ -264,18 +264,8 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 		# ----------------------------------------------------------------------------------------------
 
 		if [ "${fakeExec}" = "no" ] ; then
-			# 2do! move these to technology-specific commons
 			l_script_tech_var=dpltgt_${l_schema_id}_tech
-			l_db_user_var=dpltgt_${l_schema_id}_user
-			l_db_password_var=dpltgt_${l_schema_id}_password
-			l_db_db_var=dpltgt_${l_schema_id}_db
-
-			l_script_tech=tech.${!l_db_tech_var:-oracle}
-			l_db_user=${!l_db_user_var}
-			l_db_password=${!l_db_password_var}
-			l_db_db=${!l_db_db_var}
-
-			# ----------------------------------------------------------------------------------------------
+			l_script_tech=${!l_script_tech_var:-oracle}
 
 			InfoMessage "        pre-phase"
 
@@ -287,10 +277,10 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			InfoMessage "        execution"
 
-			. "${CommonsPath}/${l_script_tech}/script_exec.sh" \
+			. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" \
 				run \
 				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
-				"${l_db_user}/${l_db_password}@${l_db_db}" \
+				"${l_schema_id}" \
 				"${l_script_folder}" "${l_script_file}"
 
 			scriptReturnCode=$?
@@ -299,7 +289,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			if [ "${scriptReturnCode}" -eq 0 ] ; then
 				InfoMessage "        completion check"
-				. "${CommonsPath}/${l_script_tech}/script_exec.sh" \
+				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" \
 					post-run-check \
 					"${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			fi
@@ -320,7 +310,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 			fi
 
 			[ -z "${DEBUG}" ] && (
-				. "${CommonsPath}/${l_script_tech}/script_exec.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 				. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
 			)
 
