@@ -179,6 +179,11 @@ set \
 
 # ================================================================================================
 
+InfoMessage "Initializing deployment repository (${DeployRepoTech})"
+. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" initialize
+
+# ------------------------------------------------------------------------------------------------
+
 if [ "${l_action}" != "help" ] ; then
 	InfoMessage "Executing pre-deployment plugins"
 

@@ -8,6 +8,34 @@ set -o pipefail
 x_action="$1"
 
 case "${x_action}" in
+	(initialize)
+		cd "${CommonsPath}/tech.oracle/repo_ddl"
+
+		InfoMessage "    prepare"
+		set \
+			| ${local_grep} -Ei '^dpltgt_deploy_repo_' \
+			| ${local_sed} 's/^dpltgt_\(.*\)\s*=\s*\(.*\)\s*$/define \1 = \2/g' \
+			| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
+			>> "_deploy_repo_defines.${RndToken}.tmp"
+
+		InfoMessage "    execute"
+		"${SqlPlusBinary}" -L -S "${gOracle_repoDbConnect}" @_deploy_repository.sql ${RndToken} \
+			|| ThrowException "SQL*Plus failed"
+			2> "${TmpPath}/${Env}._deploy_repository.${RndToken}.err"
+			> "${TmpPath}/${Env}._deploy_repository.${RndToken}.out"
+
+		[ -z "${DEBUG}" ] && (
+			InfoMessage "    cleanup"
+			rm -f "_deploy_repository.${RndToken}.log"
+			rm -f "_deploy_repository.upgrade_script.${RndToken}.tmp"
+			rm -f "${TmpPath}/${Env}._deploy_repository.${RndToken}.err"
+			rm -f "${TmpPath}/${Env}._deploy_repository.${RndToken}.out"
+			rm -f "_deploy_repo_defines.${RndToken}.tmp"
+		)
+
+		cd "${ScriptPath}"
+		;;
+
 	(pre-phase-run)
 		x_id_script="$2"
 		x_id_script_execution="$3"

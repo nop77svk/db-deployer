@@ -19,8 +19,6 @@ output$ as (
             on F.id_db_script = FX.id_db_script
         join t_db_increment I
             on I.id_db_increment = F.id_db_increment
-        join c_db_script_file_extension CX
-            on CX.cod_file_extension = F.cod_file_ext
 )
 select id_db_script_execution||'|'||num_order||'|'||id_db_script||'|'||id_db_increment||'|'||nam_schema_id||'|'||txt_folder||'|'||txt_script_file
 from output$

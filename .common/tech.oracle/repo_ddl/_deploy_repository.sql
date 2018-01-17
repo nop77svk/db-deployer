@@ -155,8 +155,13 @@ begin
 		scr_ver('base/_update_meta.sql 12', 12),
 		--
 		scr_ver('v13/v_db_deployment_ok.all.trg', 13),
+		scr_ver('base/_update_meta.sql 13', 13),
 		--
-		scr_ver('v14/vtt_db_deploy_tgt.sql', 14)
+		scr_ver('v14/vtt_db_deploy_tgt.sql', 14),
+		scr_ver('base/_update_meta.sql 14', 14),
+		--
+		scr_ver('v15/c_db_script_file_extension.drop.sql', 15),
+		scr_ver('base/_update_meta.sql 15', 15)
 	);
 
 	l_cnt_scripts_higher_ver := scr.count();
