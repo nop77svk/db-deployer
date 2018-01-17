@@ -27,7 +27,7 @@ DoLog  -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------------------
 
-InfoMessage "Configuring the deployer script"
+InfoMessage "Deployer configuration info"
 
 InfoMessage "    running as "$( id -a )
 InfoMessage "    current path = \"${Here}\""
@@ -35,10 +35,10 @@ InfoMessage "    script path = \"${ScriptPath}\""
 InfoMessage "    path to commons = \"${CommonsPath}\""
 InfoMessage "    filename token = \"${RndToken}\""
 
-Action=${2:-all}
+l_action=${2:-all}
 Env=${1:-as-set}
 
-InfoMessage "    action = \"${Action}\""
+[ "${l_action}" != "all" ] && InfoMessage "    specific action = \"${l_action}\""
 InfoMessage "    client-defined environment = \"${Env}\""
 
 # ------------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ TmpPath=$( FolderAbsolutePath "${TmpPath:-${DeploySrcRoot}}" )
 
 InfoMessage "    temporary files path = \"${TmpPath}\""
 InfoMessage "    log files path = \"${LogPath}\""
-InfoMessage "    environment id = \"${cfg_environment}\""
+InfoMessage "    symbolic environment id = \"${cfg_environment}\""
 
 DeployRepoTech=${dpltgt_deploy_repo_tech:-oracle}
 InfoMessage "    deployment repository technology = \"${DeployRepoTech}\""
@@ -179,7 +179,7 @@ set \
 
 # ================================================================================================
 
-if [ "${Action}" != "help" ] ; then
+if [ "${l_action}" != "help" ] ; then
 	InfoMessage "Executing pre-deployment plugins"
 
 	"${local_find}" "${GlobalPluginsPath}" -name 'pre-*.sh' | "${local_sort}" -t - -k 2 -n | while read -r preScriptfile ; do
@@ -193,7 +193,7 @@ fi
 
 InfoMessage "Preparing the deployment"
 
-if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "sync" -o "${Action}" = "delta-prep" ] ; then
+if [ "${l_action}" = "delta" -o "${l_action}" = "all" -o "${l_action}" = "sync" -o "${l_action}" = "delta-prep" ] ; then
 	InfoMessage "    Fetching the complete list of increment script files"
 	cd "${DeploySrcRoot}"
 
@@ -208,40 +208,38 @@ fi
 
 # ------------------------------------------------------------------------------------------------
 
-if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "sync" -o "${Action}" = "delta-prep" ] ; then
+if [ "${l_action}" = "delta" -o "${l_action}" = "all" -o "${l_action}" = "sync" -o "${l_action}" = "delta-prep" ] ; then
 	InfoMessage "    Merging the list of found script files to (unfinished increments in) deployment repository"
 
 	cd "${TmpPath}"
 	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
-		merge-inc \
-		"${RndToken}"
+		merge-inc
 fi
 
 # ------------------------------------------------------------------------------------------------
 
-if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "sync" -o "${Action}" = "delta-prep" ] ; then
+if [ "${l_action}" = "delta" -o "${l_action}" = "all" -o "${l_action}" = "sync" -o "${l_action}" = "delta-prep" ] ; then
 	InfoMessage "    Setting up a deployment run"
 
 	cd "${DeploySrcRoot}"
 	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 		create-run \
-		"${RndToken}" "${Action}"
+		"${l_action}"
 fi
 
 # ------------------------------------------------------------------------------------------------
 
-if [ "${Action}" = "delta" -o "${Action}" = "all" -o "${Action}" = "delta-prep" ] ; then
+if [ "${l_action}" = "delta" -o "${l_action}" = "all" -o "${l_action}" = "delta-prep" ] ; then
 	InfoMessage "    Fetching the ultimate list of scripts to run from repository"
 
 	cd "${DeploySrcRoot}"
 	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
-		get-list-to-exec \
-		"${RndToken}"
+		get-list-to-exec
 fi
 
 # ------------------------------------------------------------------------------------------------
 
-if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
+if [ "${l_action}" = "delta" -o "${l_action}" = "all" ] ; then
 	InfoMessage "Running the deployment"
 	cd "${DeploySrcRoot}"
 
@@ -255,7 +253,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 		if ( echo ",${cfg_target_no_run:-}," | ${local_grep} -q ",${l_schema_id}," ) ; then
 			l_is_fake_exec=yes
-		else if [ "${Action}" = "sync" ] ; then
+		else if [ "${l_action}" = "sync" ] ; then
 			l_is_fake_exec=yes
 		else
 			l_is_fake_exec=no
@@ -272,7 +270,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 				pre-phase-run \
-				"${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+				"${l_id_script}" "${l_id_script_execution}"
 
 			# ----------------------------------------------------------------------------------------------
 
@@ -280,7 +278,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" \
 				run \
-				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
+				"${l_id_script}" "${l_id_script_execution}" \
 				"${l_schema_id}" \
 				"${l_script_folder}" "${l_script_file}"
 
@@ -292,7 +290,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 				InfoMessage "        completion check"
 				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" \
 					post-run-check \
-					"${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+					"${l_id_script}" "${l_id_script_execution}"
 			fi
 
 			# ----------------------------------------------------------------------------------------------
@@ -301,7 +299,7 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 
 			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
 				post-phase-run \
-				"${RndToken}" "${l_id_script}" "${l_id_script_execution}" \
+				"${l_id_script}" "${l_id_script_execution}" \
 				"${l_script_return_code}"
 
 			# ----------------------------------------------------------------------------------------------
@@ -311,15 +309,15 @@ if [ "${Action}" = "delta" -o "${Action}" = "all" ] ; then
 			fi
 
 			[ -z "${DEBUG}" ] && (
-				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
-				. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" cleanup "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
 			)
 
 		# ----------------------------------------------------------------------------------------------
 		else
 			InfoMessage "        fake execution for deployment repository synchronization"
 
-			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" fake-exec "${RndToken}" "${l_id_script}" "${l_id_script_execution}"
+			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" fake-exec "${l_id_script}" "${l_id_script_execution}"
 			l_script_return_code=$?
 		fi
 	done
@@ -335,7 +333,7 @@ fi
 
 # ------------------------------------------------------------------------------------------------
 
-if [ "${Action}" != "help" ] ; then
+if [ "${l_action}" != "help" ] ; then
 	InfoMessage "Executing post-deployment plugins"
 
 	"${local_find}" "${GlobalPluginsPath}" -name 'post-*.sh' | "${local_sort}" -t - -k 2 -n | while read -r postScriptfile ; do
@@ -347,7 +345,7 @@ fi
 
 # ------------------------------------------------------------------------------------------------
 
-if [ "${Action}" = "help" ] ; then
+if [ "${l_action}" = "help" ] ; then
 	DoLog "Help screen invoked!"
 
 	cat <<-EOF
@@ -410,7 +408,7 @@ fi
 
 # ------------------------------------------------------------------------------------------------
 
-if [ "${Action}" != "help" ] ; then
+if [ "${l_action}" != "help" ] ; then
 	InfoMessage "CleanUp"
 
 	set \

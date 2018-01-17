@@ -6,15 +6,14 @@ set -o nounset
 set -o pipefail
 
 x_action="$1"
-x_rnd_token="$2"
-x_id_script="$3"
-x_id_script_execution="$4"
+x_id_script="$2"
+x_id_script_execution="$3"
 
 case "${x_action}" in
 	(run)
-		x_schema_id="$5"
-		x_script_folder="$6"
-		x_script_file="$7"
+		x_schema_id="$4"
+		x_script_folder="$5"
+		x_script_file="$6"
 
 		# build the connection string
 		l_db_user_var=dpltgt_${l_schema_id}_user
@@ -45,7 +44,7 @@ case "${x_action}" in
 		esac
 
 		# execute the script
-		cat > "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+		cat > "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 			whenever sqlerror exit 1 rollback
 			whenever oserror exit 2 rollback
 
@@ -75,9 +74,9 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
-		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
 			col "It's ..." format a40
 			select user||'@'||global_name as "It's ..." from global_name;
@@ -86,10 +85,10 @@ case "${x_action}" in
 
 		EOF
 
-		echo '@@"'$( PathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		echo '@@"'$( PathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 		# add "default" schema defines
-#		echo '' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+#		echo '' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 #		cat "${gOracle_dbDefinesScriptFile}" \
 #			| ${local_gawk} -v "schemaId=${l_schema_id}" '
 #				BEGIN {
@@ -100,9 +99,9 @@ case "${x_action}" in
 #						print "define default_" substr($0, schemaIdLen+2+7);
 #					}
 #			' \
-#			>> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+#			>> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
-		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
 			prompt --- turning SQL*Plus defines "${l_sqlplus_defines_flag}"
 			set define ${l_sqlplus_defines_flag}
@@ -111,9 +110,9 @@ case "${x_action}" in
 
 		EOF
 
-		echo '@@"'$( PathUnixToWin "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		echo '@@"'$( PathUnixToWin "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
-		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" <<-EOF
+		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
 			set autoprint off
 			set autotrace off
@@ -142,9 +141,9 @@ case "${x_action}" in
 
 		scriptReturnCode=0
 
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql" )
+		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
-			2> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.stderr.out" \
+			2> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 			|| scriptReturnCode=$?
 
 		return ${scriptReturnCode}
@@ -154,7 +153,7 @@ case "${x_action}" in
 		l_lines_OK=$(
 			${local_grep} -Ei \
 				"^(it's\s*\.\.\.|---\s*(setting\s+up\s+deployment\s+config\s+vars\s*$|turning\s+sql\*plus\s+defines|running\s+the\s+script|done\s*$))" \
-				"${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.log" \
+				"${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" \
 				| wc -l
 		) || ThrowException "Spool file missing?"
 
@@ -162,8 +161,8 @@ case "${x_action}" in
 		;;
 
 	(cleanup)
-		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.stderr.out"
-		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${x_rnd_token}.sql"
+		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
+		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 		;;
 
 	(*)

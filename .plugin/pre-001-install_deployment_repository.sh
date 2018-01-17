@@ -8,7 +8,7 @@ set -o nounset
 
 # -------------------------------------------------------------------------------------------------
 
-if [ "${Action}" = "prereq" -o "${Action}" = "sync" -o "${Action}" = "all" ] ; then
+if [ "${l_action}" = "prereq" -o "${l_action}" = "sync" -o "${l_action}" = "all" ] ; then
 	InfoMessage "        Installing/upgrading the deployment engine repository"
 
 	if [ "${DeployRepoTech}" = "oracle" ] ; then
