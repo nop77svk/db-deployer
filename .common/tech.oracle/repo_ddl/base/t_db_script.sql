@@ -12,7 +12,7 @@ create table t_db_script
         foreign key (id_db_increment)
         references t_db_increment (id_db_increment)
         on delete cascade,
-    txt_script_file                 varchar2(256) not null,
+    txt_script_file                 varchar2(256 char) not null,
     --
     num_order                       integer as (regexp_substr(txt_script_file, '^(\d+)(-([^;]+))?;([a-z_]+)\.([a-z]+)$', 1, 1, 'i', 1)) not null,
     constraint CK_db_increment$ord_gt_0
@@ -29,9 +29,13 @@ create table t_db_script
 )
 tablespace &DEPLOY_REPO_TBS_TABLE;
 
+whenever sqlerror continue
+
 alter table t_db_script modify txt_script_comment varchar2(256);
 alter table t_db_script modify nam_schema_id varchar2(32);
 alter table t_db_script modify cod_file_ext varchar2(32);
+
+whenever sqlerror exit failure rollback
 
 ---
 

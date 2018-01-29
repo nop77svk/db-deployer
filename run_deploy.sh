@@ -89,9 +89,9 @@ if [ "x${Env}" != "xas-set" ] ; then
 		ThrowException "No \".env\" folder found anywhere above \"${ScriptPath}\""
 	fi
 
-	DeployTargetConfigFile="${EnvPath}/targets.${Env}.cfg"
+	DeployTargetConfigFile="${EnvPath}/${Env}.cfg"
 
-	. "${EnvPath}/targets.${Env}.cfg" || ThrowException "Cannot use the ${EnvPath}/targets.${Env}.cfg config file"
+	. "${EnvPath}/${Env}.cfg" || ThrowException "Cannot use the ${EnvPath}/${Env}.cfg config file"
 else
 	DeploySrcRoot="${ScriptPath}"
 	EnvPath=
@@ -171,7 +171,8 @@ set \
 			print "InfoMessage \"    " $0 "\"";
 			print ". \"${CommonsPath}/tech." $0 "/technology.sh\" initialize";
 		}' \
-	> "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp"
+	> "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp" \
+	|| ThrowException "No(?) deployment technologies defined for target \"${Env}\""
 
 . "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp"
 
@@ -187,10 +188,14 @@ InfoMessage "Initializing deployment repository (${DeployRepoTech})"
 if [ "${l_action}" != "help" ] ; then
 	InfoMessage "Executing pre-deployment plugins"
 
-	"${local_find}" "${GlobalPluginsPath}" -name 'pre-*.sh' | "${local_sort}" -t - -k 2 -n | while read -r preScriptfile ; do
-		InfoMessage "    ${preScriptfile}"
-		( . "${preScriptfile}" )
-	done
+	[ -d "${GlobalPluginsPath}" ] \
+		&& "${local_find}" "${GlobalPluginsPath}" -name 'pre-*.sh' \
+			| "${local_sort}" -t - -k 2 -n \
+			| while read -r preScriptfile
+		do
+			InfoMessage "    ${preScriptfile}"
+			( . "${preScriptfile}" )
+		done
 	# 2do! execute the local plugins
 fi
 
@@ -341,10 +346,14 @@ fi
 if [ "${l_action}" != "help" ] ; then
 	InfoMessage "Executing post-deployment plugins"
 
-	"${local_find}" "${GlobalPluginsPath}" -name 'post-*.sh' | "${local_sort}" -t - -k 2 -n | while read -r postScriptfile ; do
-		InfoMessage "    ${postScriptfile}"
-		( . "${postScriptfile}" )
-	done
+	[ -d "${GlobalPluginsPath}" ] \
+		&& "${local_find}" "${GlobalPluginsPath}" -name 'post-*.sh' \
+			| "${local_sort}" -t - -k 2 -n \
+			| while read -r postScriptfile
+		do
+			InfoMessage "    ${postScriptfile}"
+			( . "${postScriptfile}" )
+		done
 	# 2do! execute the local plugins
 fi
 

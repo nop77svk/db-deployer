@@ -23,7 +23,11 @@ create table t_db_increment
 tablespace &DEPLOY_REPO_TBS_TABLE
 ;
 
+whenever sqlerror continue
+
 alter table t_db_increment modify txt_comment varchar2(256);
+
+whenever sqlerror exit failure rollback
 
 ---
 

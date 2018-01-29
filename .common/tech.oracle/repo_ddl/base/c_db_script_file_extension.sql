@@ -1,6 +1,6 @@
 create table c_db_script_file_extension
 (
-    cod_file_extension              varchar2(32) not null,
+    cod_file_extension              varchar2(32 byte) not null,
     constraint PK_db_script_file_extension
         primary key (cod_file_extension)
         using index
