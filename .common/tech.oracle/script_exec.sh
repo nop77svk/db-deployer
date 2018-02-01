@@ -38,113 +38,114 @@ case "${x_action}" in
 			pkg|spc|bdy|pck|pks|pkb|typ|tps|tpb|trg|fnc|prc)
 				l_sqlplus_defines_flag=off
 				;;
+			ctl)
+				l_sqlplus_defines_flag=-
+				;;
 			*)
 				l_sqlplus_defines_flag=on
 				;;
 		esac
 
 		# execute the script
-		cat > "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
-			whenever sqlerror exit 1 rollback
-			whenever oserror exit 2 rollback
+		if [ "${l_script_file_ext}" = "ctl" ] ; then
+			ln "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl"
+			"${SqlLoaderBinary}" \
+				userid="${l_connect}" \
+				control=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" ) \
+				log=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" ) \
+				1>&2 \
+				2> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+				|| scriptReturnCode=$?
 
-			-- phase: execution
+		else
+			cat > "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
+				whenever sqlerror exit 1 rollback
+				whenever oserror exit 2 rollback
 
-			connect ${l_connect}
+				-- phase: execution
 
-			set autoprint off
-			set autotrace off
-			set echo on
-			set define on
-			set escape off
-			set feedback on
-			set heading on
-			set headsep on
-			set linesize 32767
-			set serveroutput on size unlimited format truncated
-			set sqlbl on
-			set sqlterminator ';'
-			set termout off
-			set trimout on
-			set trimspool on
-			set verify on
-			set wrap on
+				connect ${l_connect}
 
-			set exitcommit on
+				set autoprint off
+				set autotrace off
+				set echo on
+				set define on
+				set escape off
+				set feedback on
+				set heading on
+				set headsep on
+				set linesize 32767
+				set serveroutput on size unlimited format truncated
+				set sqlbl on
+				set sqlterminator ';'
+				set termout off
+				set trimout on
+				set trimspool on
+				set verify on
+				set wrap on
 
-		EOF
+				set exitcommit on
 
-		echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			EOF
 
-		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
+			echo 'spool "'$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
-			col "It's ..." format a40
-			select user||'@'||global_name as "It's ..." from global_name;
+			cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
-			prompt --- setting up deployment config vars
+				col "It's ..." format a40
+				select user||'@'||global_name as "It's ..." from global_name;
 
-		EOF
+				prompt --- setting up deployment config vars
 
-		echo '@@"'$( PathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			EOF
 
-		# add "default" schema defines
-#		echo '' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
-#		cat "${gOracle_dbDefinesScriptFile}" \
-#			| ${local_gawk} -v "schemaId=${l_schema_id}" '
-#				BEGIN {
-#					schemaIdLen = length(schemaId);
-#				}
-#
-#				substr($0, 1, schemaIdLen+1+7) == "define " schemaId "_" {
-#						print "define default_" substr($0, schemaIdLen+2+7);
-#					}
-#			' \
-#			>> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			echo '@@"'$( PathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
-		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
+			cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
-			prompt --- turning SQL*Plus defines "${l_sqlplus_defines_flag}"
-			set define ${l_sqlplus_defines_flag}
+				prompt --- turning SQL*Plus defines "${l_sqlplus_defines_flag}"
+				set define ${l_sqlplus_defines_flag}
 
-			prompt --- running the script "${x_script_folder}/${x_script_file}" (ID "${x_id_script}", execution ID "${x_id_script_execution}")
+				prompt --- running the script "${x_script_folder}/${x_script_file}" (ID "${x_id_script}", execution ID "${x_id_script_execution}")
 
-		EOF
+			EOF
 
-		echo '@@"'$( PathUnixToWin "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			echo '@@"'$( PathUnixToWin "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" )'"' >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
-		cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
+			cat >> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
-			set autoprint off
-			set autotrace off
-			set echo on
-			set define on
-			set escape off
-			set feedback on
-			set heading on
-			set headsep on
-			set linesize 32767
-			set serveroutput on size unlimited format truncated
-			set sqlbl on
-			set sqlterminator ';'
-			set termout off
-			set trimout on
-			set trimspool on
-			set verify on
-			set wrap on
+				set autoprint off
+				set autotrace off
+				set echo on
+				set define on
+				set escape off
+				set feedback on
+				set heading on
+				set headsep on
+				set linesize 32767
+				set serveroutput on size unlimited format truncated
+				set sqlbl on
+				set sqlterminator ';'
+				set termout off
+				set trimout on
+				set trimspool on
+				set verify on
+				set wrap on
 
-			prompt --- DONE
-			commit;
+				prompt --- DONE
+				commit;
 
-			spool off
-			exit success
-		EOF
+				spool off
+				exit success
+			EOF
 
-		scriptReturnCode=0
+			scriptReturnCode=0
 
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
-		"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
-			2> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
-			|| scriptReturnCode=$?
+			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
+			"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
+				2> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+				|| scriptReturnCode=$?
+		fi
 
 		return ${scriptReturnCode}
 		;;
@@ -162,7 +163,8 @@ case "${x_action}" in
 
 	(cleanup)
 		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
-		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" || true
+		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" || true
 		;;
 
 	(*)

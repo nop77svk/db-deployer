@@ -1,4 +1,11 @@
 #!/bin/bash
+# ------------------------------------------------------------------------------------------------
+# incremental deployments framework
+# ------------------------------------------------------------------------------------------------
+# author: Peter Hrasko
+# e-mail: peter.hrasko.sk@gmail.com
+# web:    peterhrasko.wordpress.com
+# ------------------------------------------------------------------------------------------------
 set -o errexit
 set -o errtrace
 set -o functrace
@@ -37,6 +44,11 @@ InfoMessage "    filename token = \"${RndToken}\""
 
 l_action=${2:-all}
 Env=${1:-as-set}
+
+if [ "${Env}" = "help" ] ; then
+	Env='dev'
+	l_action=help
+fi
 
 [ "${l_action}" != "all" ] && InfoMessage "    specific action = \"${l_action}\""
 InfoMessage "    client-defined environment = \"${Env}\""
