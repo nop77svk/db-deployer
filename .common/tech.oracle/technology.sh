@@ -4,6 +4,7 @@ set -o errtrace
 set -o functrace
 set -o nounset
 set -o pipefail
+[ -n "${DEBUG:-}" ] && set -x # xtrace
 
 x_action="$1"
 

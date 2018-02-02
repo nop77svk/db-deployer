@@ -11,7 +11,7 @@ set -o errtrace
 set -o functrace
 #set -o nounset
 set -o pipefail
-[ -n "${DEBUG:=}" ] && set -x # xtrace
+[ -n "${DEBUG:-}" ] && set -x # xtrace
 
 Here=$PWD
 ScriptPath=$( dirname "$0" )
@@ -157,7 +157,7 @@ rm ${Env}.*.tmp 2> /dev/null || InfoMessage '    Note: No TMP files to clean up'
 rm ${Env}.*.sql 2> /dev/null || InfoMessage '    Note: No SQL files to clean up'
 rm ${Env}.*.stderr.out 2> /dev/null || InfoMessage '    Note: No STDERR.OUT files to clean up'
 rm ${Env}.*.tbz2 2> /dev/null || InfoMessage '    Note: No TBZ2 files to clean up'
-[ -n "${DEBUG}" ] && rm ${Env}.*.log 2> /dev/null || InfoMessage '    Note: No LOG files to clean up'
+[ -z "${DEBUG:-}" ] && rm ${Env}.*.log 2> /dev/null || InfoMessage '    Note: No LOG files to clean up'
 
 # ------------------------------------------------------------------------------------------------
 
@@ -188,7 +188,9 @@ set \
 
 . "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp"
 
-[ -z "${DEBUG}" ] && rm "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp"
+[ -z "${DEBUG:-}" ] || true && (
+	rm "${TmpPath}/${Env}.prepare_technologies.${RndToken}.tmp"
+)
 
 # ================================================================================================
 
@@ -308,15 +310,6 @@ if [ "${l_action}" = "delta" -o "${l_action}" = "all" ] ; then
 
 			# ----------------------------------------------------------------------------------------------
 
-			if [ "${l_script_return_code}" -eq 0 ] ; then
-				InfoMessage "        completion check"
-				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" \
-					post-run-check \
-					"${l_id_script}" "${l_id_script_execution}"
-			fi
-
-			# ----------------------------------------------------------------------------------------------
-
 			InfoMessage "        post-phase"
 
 			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
@@ -330,7 +323,7 @@ if [ "${l_action}" = "delta" -o "${l_action}" = "all" ] ; then
 				ThrowException "The most recent increment script exited with status of ${l_script_return_code}"
 			fi
 
-			[ -z "${DEBUG}" ] && (
+			[ -z "${DEBUG:-}" ] || true && (
 				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
 				. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
 			)
@@ -349,8 +342,10 @@ if [ "${l_action}" = "delta" -o "${l_action}" = "all" ] ; then
 	[ ${l_script_return_code} -gt 0 ] && exit ${l_script_return_code}
 
 	unset IFS
-	[ -z "${DEBUG}" ] && rm "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.sql"
-	[ -z "${DEBUG}" ] && rm "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.tmp"
+	[ -z "${DEBUG:-}" ] || true && (
+		rm "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.sql"
+		rm "${TmpPath}/${Env}.retrieve_the_deployment_setup.${RndToken}.tmp"
+	)
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -450,7 +445,9 @@ if [ "${l_action}" != "help" ] ; then
 
 	. "${TmpPath}/${Env}.cleanup.${RndToken}.tmp"
 
-	[ -z "${DEBUG}" ] && rm "${TmpPath}/${Env}.cleanup.${RndToken}.tmp"
+	[ -z "${DEBUG:-}" ] || true && (
+		rm "${TmpPath}/${Env}.cleanup.${RndToken}.tmp"
+	)
 fi
 
 # ------------------------------------------------------------------------------------------------

@@ -4,6 +4,7 @@ set -o errtrace
 set -o functrace
 set -o nounset
 set -o pipefail
+[ -n "${DEBUG:-}" ] && set -x # xtrace
 
 x_action="$1"
 x_id_script="$2"
@@ -53,8 +54,8 @@ case "${x_action}" in
 				userid="${l_connect}" \
 				control=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" ) \
 				log=$( PathUnixToWin "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" ) \
-				1>&2 \
-				2> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+				2>&1 \
+				> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 				|| scriptReturnCode=$?
 
 		else
@@ -145,26 +146,24 @@ case "${x_action}" in
 			"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
 				2> "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 				|| scriptReturnCode=$?
+
+			l_lines_OK=$(
+				${local_grep} -Ei \
+					"^(it's\s*\.\.\.|---\s*(setting\s+up\s+deployment\s+config\s+vars\s*$|turning\s+sql\*plus\s+defines|running\s+the\s+script|done\s*$))" \
+					"${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" \
+					| wc -l
+			) || ThrowException "Spool file missing?"
+
+			[ "$l_lines_OK" -eq 5 ] || ThrowException "Incomplete script execution! Trailing slash missing?"
 		fi
 
 		return ${scriptReturnCode}
 		;;
 
-	(post-run-check)
-		l_lines_OK=$(
-			${local_grep} -Ei \
-				"^(it's\s*\.\.\.|---\s*(setting\s+up\s+deployment\s+config\s+vars\s*$|turning\s+sql\*plus\s+defines|running\s+the\s+script|done\s*$))" \
-				"${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" \
-				| wc -l
-		) || ThrowException "Spool file missing?"
-
-		[ "$l_lines_OK" -eq 5 ] || ThrowException "Incomplete script execution! Trailing slash missing?"
-		;;
-
 	(cleanup)
 		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
-		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" || true
-		rm "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" || true
+		rm -f "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" 2> /dev/null
+		rm -f "${TmpPath}/${Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" 2> /dev/null
 		;;
 
 	(*)

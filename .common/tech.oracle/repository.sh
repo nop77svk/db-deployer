@@ -4,6 +4,7 @@ set -o errtrace
 set -o functrace
 set -o nounset
 set -o pipefail
+[ -n "${DEBUG:-}" ] && set -x # xtrace
 
 x_action="$1"
 
@@ -24,7 +25,7 @@ case "${x_action}" in
 			2> "${TmpPath}/${Env}._deploy_repository.${RndToken}.err"
 			> "${TmpPath}/${Env}._deploy_repository.${RndToken}.out"
 
-		[ -z "${DEBUG}" ] && (
+		[ -z "${DEBUG:-}" ] || true && (
 			InfoMessage "    cleanup"
 			rm -f "_deploy_repository.${RndToken}.log"
 			rm -f "_deploy_repository.upgrade_script.${RndToken}.tmp"
@@ -249,7 +250,7 @@ case "${x_action}" in
 			2> "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 			|| ThrowException "SQL*Plus execution exited with status of $?"
 
-		[ -z "${DEBUG}" ] && (
+		[ -z "${DEBUG:-}" ] || true && (
 			rm "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
 			rm "${TmpPath}/${Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 		)
@@ -305,10 +306,10 @@ case "${x_action}" in
 		EOF
 	
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql" )
-		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S "${gOracle_repoDbConnect}" @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 	
-		[ -z "${DEBUG}" ] && (
+		[ -z "${DEBUG:-}" ] || true && (
 			rm "${TmpPath}/${Env}.script_full_paths.${RndToken}.tmp"
 			rm "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.sql"
 			rm "${TmpPath}/${Env}.merge_increments_to_repo.${RndToken}.log"
@@ -400,7 +401,7 @@ case "${x_action}" in
 		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 	
-		[ -z "${DEBUG}" ] && (
+		[ -z "${DEBUG:-}" ] || true && (
 			rm "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
 			rm "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.log"
 		)
@@ -409,3 +410,4 @@ case "${x_action}" in
 	(*)
 		ThrowException "Unmatched action \"${x_action}\""
 esac
+
