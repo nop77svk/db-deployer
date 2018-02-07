@@ -123,7 +123,7 @@ LogFolder="${DeploySrcRoot}"
 InfoMessage "    note: log output folder switched from \"${formerLogFolder}\" to \"${LogFolder}\""
 
 GlobalPluginsPath="${ScriptPath}/.plugin"
-# 2do! determine the local plugins folders; can be in two places - at ScriptPath, at Here
+LocalPluginsPath="${DeploySrcRoot}/.plugin"
 
 # ------------------------------------------------------------------------------------------------
 
@@ -202,15 +202,23 @@ InfoMessage "Initializing deployment repository (${DeployRepoTech})"
 if [ "${l_action}" != "help" ] ; then
 	InfoMessage "Executing pre-deployment plugins"
 
-	[ -d "${GlobalPluginsPath}" ] \
+	[ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] \
 		&& "${local_find}" "${GlobalPluginsPath}" -name 'pre-*.sh' \
+			| "${local_sort}" -t - -k 2 -n \
+			| while read -r preScriptfile
+		do
+			InfoMessage "    ${preScriptfile} (global)"
+			( . "${preScriptfile}" )
+		done
+
+	[ -d "${LocalPluginsPath}" ] \
+		&& "${local_find}" "${LocalPluginsPath}" -name 'pre-*.sh' \
 			| "${local_sort}" -t - -k 2 -n \
 			| while read -r preScriptfile
 		do
 			InfoMessage "    ${preScriptfile}"
 			( . "${preScriptfile}" )
 		done
-	# 2do! execute the local plugins
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -353,15 +361,23 @@ fi
 if [ "${l_action}" != "help" ] ; then
 	InfoMessage "Executing post-deployment plugins"
 
-	[ -d "${GlobalPluginsPath}" ] \
+	[ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] \
 		&& "${local_find}" "${GlobalPluginsPath}" -name 'post-*.sh' \
+			| "${local_sort}" -t - -k 2 -n \
+			| while read -r postScriptfile
+		do
+			InfoMessage "    ${postScriptfile} (global)"
+			( . "${postScriptfile}" )
+		done
+
+	[ -d "${LocalPluginsPath}" ] \
+		&& "${local_find}" "${LocalPluginsPath}" -name 'post-*.sh' \
 			| "${local_sort}" -t - -k 2 -n \
 			| while read -r postScriptfile
 		do
 			InfoMessage "    ${postScriptfile}"
 			( . "${postScriptfile}" )
 		done
-	# 2do! execute the local plugins
 fi
 
 # ------------------------------------------------------------------------------------------------
