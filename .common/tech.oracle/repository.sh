@@ -377,7 +377,7 @@ case "${x_action}" in
 		echo '' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
 	
 		echo 'prompt --- loading deployment targets to tmp' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
-		declare | ${local_grep} -E '^(dpltgt|dbgrp)_.*=' | ${local_sed} "s/^.*$/insert into tt_db_deploy_tgt (txt_config_var_assignment) values (q'{&}');/gi" >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
+		declare | ${local_grep} -E '^(dpltgt_[^=]*_(db|user)|dbgrp_.*)=' | ${local_sed} "s/^.*$/insert into tt_db_deploy_tgt (txt_config_var_assignment) values (q'{&}');/gi" >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
 		echo '' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"
 	
 		echo 'prompt --- calling set_up_deployment_run.sql' >> "${TmpPath}/${Env}.set_up_deployment_run.${RndToken}.sql"

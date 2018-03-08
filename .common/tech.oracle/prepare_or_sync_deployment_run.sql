@@ -5,7 +5,7 @@ define script_action="&1"
 prompt script action = "&script_action"
 
 /*
-insert into tt_db_deploy_tgt (txt_config_var_assignment) values (q'{dpltgt_aurep_local_db=dqm-local}');
+delete from tt_db_deploy_tgt;
 insert into tt_db_deploy_tgt (txt_config_var_assignment) values (q'{dpltgt_aurep_local_password=xxxxxxxx}');
 insert into tt_db_deploy_tgt (txt_config_var_assignment) values (q'{dpltgt_aurep_local_tbs_index=dqm_idx}');
 insert into tt_db_deploy_tgt (txt_config_var_assignment) values (q'{dpltgt_aurep_local_tbs_lob=dqm_dat}');

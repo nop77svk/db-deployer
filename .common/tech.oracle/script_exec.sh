@@ -16,22 +16,7 @@ case "${x_action}" in
 		x_script_folder="$5"
 		x_script_file="$6"
 
-		# build the connection string
-		l_db_user_var=dpltgt_${l_schema_id}_user
-		l_db_password_var=dpltgt_${l_schema_id}_password
-		l_db_db_var=dpltgt_${l_schema_id}_db
-		l_db_as_sysdba=dpltgt_${l_schema_id}_as_sysdba
-
-		l_db_user=${!l_db_user_var}
-		l_db_password=${!l_db_password_var}
-		l_db_db=${!l_db_db_var}
-		l_db_as_sysdba=${!l_db_as_sysdba:-no}
-
-		if [ "${l_db_as_sysdba}" = "yes" ] ; then
-			l_connect="${l_db_user}/${l_db_password}@${l_db_db} as sysdba"
-		else
-			l_connect="${l_db_user}/${l_db_password}@${l_db_db}"
-		fi
+		tech-oracle-get_connect_string l_connect "${x_schema_id}"
 		
 		# determine the "defines" flag
 		l_script_file_ext=${x_script_file##*.}
