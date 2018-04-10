@@ -57,13 +57,34 @@ InfoMessage "    client-defined environment = \"${Env}\""
 
 set -o nounset
 
-if [ "x${Env}" != "xas-set" ] ; then
-	InfoMessage "Seeking for deployment sources root"
-	EnvPath=
-	DeploySrcRoot=
+InfoMessage "Seeking for deployment sources root"
+EnvPath=
+DeploySrcRoot=
 
-	cd "${Here}"
-	InfoMessage "    Starting from \"${Here}\""
+cd "${Here}"
+InfoMessage "    Starting from \"${Here}\""
+while true ; do
+	thisLevel=$(pwd)
+	if [ "x${Env}" != "xas-set" -a -d .env ] ; then
+		DeploySrcRoot="${thisLevel}"
+		EnvPath="${thisLevel}/.env"
+		break
+	else if [ "x${Env}" = "xas-set" -a -f run_deploy.cfg ] ; then
+		DeploySrcRoot="${thisLevel}"
+		EnvPath="${thisLevel}"
+		break
+	else if [ "${thisLevel}" = / ] ; then
+		break
+	else
+		InfoMessage "    Now getting one level higher"
+		cd ..
+	fi ; fi ; fi
+done
+
+if [ "x${Env}" != "xas-set" -a "x${EnvPath}" = "x" ] ; then
+	InfoMessage "    Not found; Restarting from \"${ScriptPath}\""
+
+	cd "${ScriptPath}"
 	while true ; do
 		thisLevel=$(pwd)
 		if [ -d .env ] ; then
@@ -77,38 +98,16 @@ if [ "x${Env}" != "xas-set" ] ; then
 			cd ..
 		fi ; fi
 	done
+fi
 
-	if [ "x${EnvPath}" = "x" ] ; then
-		InfoMessage "    Not found; Restarting from \"${ScriptPath}\""
+if [ "x${DeploySrcRoot}" = "x" ] ; then
+	ThrowException "Unable to determine deployment sources root"
+fi
 
-		cd "${ScriptPath}"
-		while true ; do
-			thisLevel=$(pwd)
-			if [ -d .env ] ; then
-				DeploySrcRoot="${thisLevel}"
-				EnvPath="${thisLevel}/.env"
-				break
-			else if [ "${thisLevel}" = / ] ; then
-				break
-			else
-				InfoMessage "    Now getting one level higher"
-				cd ..
-			fi ; fi
-		done
-	fi
-
-	if [ "x${EnvPath}" = "x" ] ; then
-		ThrowException "No \".env\" folder found anywhere above \"${ScriptPath}\""
-	fi
-
+if [ "x${Env}" != "xas-set" ] ; then
 	DeployTargetConfigFile="${EnvPath}/${Env}.cfg"
-
-	. "${EnvPath}/${Env}.cfg" || ThrowException "Cannot use the ${EnvPath}/${Env}.cfg config file"
 else
-	DeploySrcRoot="${ScriptPath}"
-	EnvPath=
-	DeployTargetConfigFile="${ScriptPath}/settings.cfg"
-	. "${ScriptPath}/settings.cfg" || ThrowException "No ${ScriptPath}/settings.cfg config file present"
+	DeployTargetConfigFile="${EnvPath}/run_deploy.cfg"
 fi
 
 InfoMessage "    determined deployment sources root = \"${DeploySrcRoot}\""
