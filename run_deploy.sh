@@ -115,30 +115,32 @@ InfoMessage "    environment config file in use = \"${DeployTargetConfigFile}\""
 
 . "${DeployTargetConfigFile}" || ThrowException "No \"${DeployTargetConfigFile}\" config file present"
 
-InfoMessage "    note: switching log output from \"${LogFolder}\" to \"${DeploySrcRoot}\""
-formerLogFolder="${LogFolder}"
-LogFolder="${DeploySrcRoot}"
-. "${CommonsPath}/error_handling.sh"
-InfoMessage "    note: log output folder switched from \"${formerLogFolder}\" to \"${LogFolder}\""
+# ------------------------------------------------------------------------------------------------
 
-GlobalPluginsPath="${ScriptPath}/.plugin"
-LocalPluginsPath="${DeploySrcRoot}/.plugin"
+formerLogFolder="${LogFolder}"
+newLogFolder="${cfg_log_folder:-${LogPath:-${DeploySrcRoot}}}"
+
+InfoMessage "    note: switching log output from \"${LogFolder}\" to \"${newLogFolder}\""
+LogFolder="${newLogFolder}"
+InfoMessage "    note: log output folder switched from \"${formerLogFolder}\" to \"${LogFolder}\""
 
 # ------------------------------------------------------------------------------------------------
 
 InfoMessage "Further configuring the deployer"
 
-LogPath=$( FolderAbsolutePath "${LogPath:-${DeploySrcRoot}}" )
-TmpPath=$( FolderAbsolutePath "${TmpPath:-${DeploySrcRoot}}" )
+GlobalPluginsPath="${ScriptPath}/.plugin"
+InfoMessage "    path to global plugins = \"${GlobalPluginsPath}\""
 
+LocalPluginsPath="${DeploySrcRoot}/.plugin"
+InfoMessage "    path to local plugins = \"${LocalPluginsPath}\""
+
+TmpPath=$( FolderAbsolutePath "${cfg_tmp_path:-${TmpPath:-${DeploySrcRoot}}}" )
 InfoMessage "    temporary files path = \"${TmpPath}\""
-InfoMessage "    log files path = \"${LogPath}\""
+
 InfoMessage "    symbolic environment id = \"${cfg_environment}\""
 
-DeployRepoTech=${dpltgt_deploy_repo_tech:-oracle}
+DeployRepoTech="${dpltgt_deploy_repo_tech:-oracle}"
 InfoMessage "    deployment repository technology = \"${DeployRepoTech}\""
-
-cd "${TmpPath}"
 
 # ------------------------------------------------------------------------------------------------
 

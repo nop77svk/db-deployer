@@ -4,15 +4,13 @@
 [ -d "${LogFolder}" ] || mkdir "${LogFolder}"
 
 LogFileStub="${LogFileStub:-run_deploy}"
-
-LogFile="${LogFolder}/${LogFileStub}."$( date +%Y%m%d )".log"
-
+LogFileName="${LogFileStub}."$( date +%Y%m%d )".log"
 
 function DoLog()
 {
 	local LogTimeStamp=$( date "+%Y-%m-%d %H:%M:%S" )
 	for param in "$@" ; do
-		echo \[${LogTimeStamp}/$$\] "${param}" >> "${LogFile}"
+		echo \[${LogTimeStamp}/$$\] "${param}" >> "${LogFolder}/${LogFileName}"
 	done
 }
 
