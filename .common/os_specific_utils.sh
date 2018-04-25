@@ -4,12 +4,34 @@ if [ "${OS:-??}" = "Windows_NT" ] ; then
 	OStype=cygwin
 else if [[ $(uname) =~ ^[Cc][Yy][Gg][Ww][Ii][Nn] ]] ; then
 	OStype=cygwin
+else if [[ $(uname) =~ ^[Ll][Ii][Nn][Uu][Xx] ]] ; then
+	OStype=linux
 else if [ $(uname) = "SunOS" ] ; then
 	OStype=SunOS
 else
 	ThrowException "Unknown OS type! uname = "$(uname)", OS env var = ${OS:-}"
-fi ; fi ; fi
+fi ; fi ; fi ; fi
 
+# ------------------------------------------------------------------------------------------------
+
+function bash__VersionIsAtLeast()
+{
+	local bashMajorVersion=${BASH_VERSION%%.*}
+	local bashMinorVersion=${BASH_VERSION#*.}
+	local bashMinorVersion=${bashMinorVersion%%.*}
+
+	local targetMajorVersion=$1
+	local targetMinorVersion=$2
+
+	[ ${bashMajorVersion} -gt ${targetMajorVersion} -o ${bashMajorVersion} -eq ${targetMajorVersion} -a ${bashMinorVersion} -ge ${targetMinorVersion} ]
+}
+
+function bash__SupportsVariableReferences()
+{
+	bash__VersionIsAtLeast 4 3
+}
+
+# ------------------------------------------------------------------------------------------------
 
 if [ ${OStype} = "SunOS" ] ; then
 	local_find=/usr/xpg4/bin/find
@@ -17,7 +39,7 @@ if [ ${OStype} = "SunOS" ] ; then
 	local_grep=/usr/xpg4/bin/grep
 	local_sed=/usr/xpg4/bin/sed
 	local_sort=/usr/xpg4/bin/sort
-else if [ ${OStype} = "cygwin" ] ; then
+else if [ ${OStype} = "cygwin" -o ${OStype} = "linux" ] ; then
 	local_find=/bin/find
 	local_gawk=/bin/gawk
 	local_grep=/bin/grep
@@ -30,6 +52,8 @@ fi ; fi
 [ -f "${local_grep}" -o -f "${local_grep}.exe" ] || ThrowException "GREP command not accessible"
 [ -f "${local_sed}" -o -f "${local_sed}.exe" ] || ThrowException "SED command not accessible"
 [ -f "${local_sort}" -o -f "${local_sort}.exe" ] || ThrowException "SORT command not accessible"
+
+# ------------------------------------------------------------------------------------------------
 
 function CatPathUnixToWin()
 {

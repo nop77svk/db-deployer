@@ -39,7 +39,12 @@ case "$x_action" in
 
 		function tech-oracle-get_connect_string()
 		{
-			declare -n o_result=$1
+			if bash__SupportsVariableReferences ; then
+				declare -n o_result=$1
+			else
+				local o_result
+			fi
+
 			[ -n "${2:-}" ] || ThrowException "No target id supplied in call to tech-oracle-get_connect_string()"
 			local x_target_id="$2"
 			local x_pass_flag="${3:-}"
@@ -68,6 +73,10 @@ case "$x_action" in
 			else
 				o_result="${l_db_user}/${l_db_password}@${l_db_db}"
 			fi ; fi
+
+			if ! bash__SupportsVariableReferences ; then
+				eval $1=\$o_result
+			fi
 		}
 
 		# ----------------------------------------------------------------------------------------------

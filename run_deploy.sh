@@ -230,7 +230,7 @@ if [ "${l_action}" = "delta" -o "${l_action}" = "all" -o "${l_action}" = "sync" 
 	InfoMessage "    Fetching the complete list of increment script files"
 	cd "${DeploySrcRoot}"
 
-	if [ ${OStype} = "cygwin" ] ; then
+	if [ ${OStype} = "cygwin" -o ${OStype} = "linux" ] ; then
 		${local_find} . -mindepth 2 -not -path './.*/*' -not -name '*.~???' -not -name '*.???~' -type f | ${local_sed} 's/^\.\///g' > "${TmpPath}/${Env}.script_full_paths.${RndToken}.tmp"
 	else if [ ${OStype} = "SunOS" ] ; then
 		${local_find} . ! -name '*.???~' ! -name '*.~???' -type f | ${local_grep} -Evi '^\.\/\..*\/' 2> /dev/null | ${local_gawk} -v depf=2 -v FS='/' 'NF>=(1+depf)' > "${TmpPath}/${Env}.script_full_paths.${RndToken}.tmp"
