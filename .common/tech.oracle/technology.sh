@@ -32,7 +32,7 @@ case "$x_action" in
 		InfoMessage "        SQL*Loader binary = \"${SqlLoaderBinary}\""
 		[ -f "${SqlLoaderBinary}" -o -f "${SqlLoaderBinary}.exe" ] || InfoMessage "            Warning: SQL*Loader binary not accessible!"
 		
-		export gOracle_dbDefinesScriptFile="${TmpPath}/${Env}.deployment_db_defines.${RndToken}.sql"
+		export gOracle_dbDefinesScriptFile="${TmpPath}/${gx_Env}.deployment_db_defines.${RndToken}.sql"
 		InfoMessage "        SQL*Plus defines file = \"${gOracle_dbDefinesScriptFile}\""
 
 		# ----------------------------------------------------------------------------------------------
