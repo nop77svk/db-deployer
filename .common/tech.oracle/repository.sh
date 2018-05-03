@@ -22,15 +22,15 @@ case "${x_action}" in
 		InfoMessage "    execute"
 		"${SqlPlusBinary}" -L -S "${gOracle_repoDbConnect}" @_deploy_repository.sql ${RndToken} \
 			|| ThrowException "SQL*Plus failed"
-			2> "${TmpPath}/${gx_Env}._deploy_repository.${RndToken}.err"
-			> "${TmpPath}/${gx_Env}._deploy_repository.${RndToken}.out"
+			2> "${g_LogFolder}/${gx_Env}._deploy_repository.${RndToken}.err"
+			> "${g_LogFolder}/${gx_Env}._deploy_repository.${RndToken}.out"
 
 		[ -z "${DEBUG:-}" ] || true && (
 			InfoMessage "    cleanup"
 			rm -f "_deploy_repository.${RndToken}.log"
 			rm -f "_deploy_repository.upgrade_script.${RndToken}.tmp"
-			rm -f "${TmpPath}/${gx_Env}._deploy_repository.${RndToken}.err"
-			rm -f "${TmpPath}/${gx_Env}._deploy_repository.${RndToken}.out"
+			rm -f "${g_LogFolder}/${gx_Env}._deploy_repository.${RndToken}.err"
+			rm -f "${g_LogFolder}/${gx_Env}._deploy_repository.${RndToken}.out"
 			rm -f "_deploy_repo_defines.${RndToken}.tmp"
 		)
 
@@ -70,7 +70,7 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 		cat >> "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -92,7 +92,7 @@ case "${x_action}" in
 
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
-			2> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+			2> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 			|| scriptReturnCode=$?
 
 		return ${scriptReturnCode}
@@ -128,7 +128,7 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 		cat >> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -149,7 +149,7 @@ case "${x_action}" in
 
 		EOF
 
-		cat "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" \
+		cat "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" \
 			| gzip -9cn \
 			| base64 \
 			| ${local_gawk} \
@@ -157,7 +157,7 @@ case "${x_action}" in
 				-v 'outputClobVarName=l_script_spool' \
 			>> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
-		cat "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+		cat "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 			| gzip -9cn \
 			| base64 \
 			| ${local_gawk} \
@@ -184,7 +184,7 @@ case "${x_action}" in
 		x_id_script_execution="$3"
 
 		rm "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
-		rm "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log"
+		rm "${g_LogFolder}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log"
 		;;&
 
 	(post-phase-cleanup|cleanup)
@@ -192,7 +192,7 @@ case "${x_action}" in
 		x_id_script_execution="$3"
 
 		rm "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
-		rm "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.log"
+		rm "${g_LogFolder}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.log"
 		;;
 
 	(fake-exec)
@@ -225,7 +225,7 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 		fakeMsg="note: a faked execution of \"${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql\""
 
 		cat >> "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
@@ -247,11 +247,11 @@ case "${x_action}" in
 
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
-			2> "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+			2> "${g_LogFolder}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 			|| ThrowException "SQL*Plus execution exited with status of $?"
 
 		[ -z "${DEBUG:-}" ] || true && (
-			rm "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
+			rm "${g_LogFolder}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
 			rm "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 		)
 
@@ -269,8 +269,13 @@ case "${x_action}" in
 			set termout off
 			set echo off
 			set feedback on
-			spool "${gx_Env}.merge_increments_to_repo.${RndToken}.log"
+
+		EOF
+
+		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.merge_increments_to_repo.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
+		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
+
 			col "It's ..." format a40
 			select user||'@'||global_name as "It's ..." from global_name;
 	
@@ -312,7 +317,7 @@ case "${x_action}" in
 		[ -z "${DEBUG:-}" ] || true && (
 			rm "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp"
 			rm "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
-			rm "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.log"
+			rm "${g_LogFolder}/${gx_Env}.merge_increments_to_repo.${RndToken}.log"
 		)
 		;;
 
@@ -373,7 +378,7 @@ case "${x_action}" in
 	
 		EOF
 	
-		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.set_up_deployment_run.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		echo '' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	
 		echo 'prompt --- loading deployment targets to tmp' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
@@ -403,7 +408,7 @@ case "${x_action}" in
 	
 		[ -z "${DEBUG:-}" ] || true && (
 			rm "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
-			rm "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.log"
+			rm "${g_LogFolder}/${gx_Env}.set_up_deployment_run.${RndToken}.log"
 		)
 		;;
 

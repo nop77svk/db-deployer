@@ -25,7 +25,7 @@ cd "${Here}"
 CommonsPath="${ScriptPath}/.common"
 . "${CommonsPath}/common.sh"
 
-LogFolder="${Here}"
+g_LogFolder="${Here}"
 LogFileStub=run_deploy
 #ErrorNotificationMailRecipients=
 . "${CommonsPath}/error_handling.sh"
@@ -184,12 +184,13 @@ fi
 
 # ------------------------------------------------------------------------------------------------
 
-formerLogFolder="${LogFolder}"
-newLogFolder="${cfg_log_folder:-${LogPath:-${DeploySrcRoot:-${Here}}}}"
+formerLogFolder="${g_LogFolder}"
+newLogFolder=$( PathWinToUnix "${cfg_log_folder:-${g_LogFolder:-${DeploySrcRoot:-${Here}}}}" )
+
 if [ "x${formerLogFolder}" != "x${newLogFolder}" ] ; then
-	InfoMessage "    note: switching log output from \"${LogFolder}\" to \"${newLogFolder}\""
-	LogFolder="${newLogFolder}"
-	InfoMessage "    note: log output folder switched from \"${formerLogFolder}\" to \"${LogFolder}\""
+	InfoMessage "    note: switching log output from \"${g_LogFolder}\" to \"${newLogFolder}\""
+	g_LogFolder="${newLogFolder}"
+	InfoMessage "    note: log output folder switched from \"${formerLogFolder}\" to \"${g_LogFolder}\""
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -197,7 +198,7 @@ fi
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "Further configuring the deployer"
 
-	TmpPath=$( PathWinToUnix "${cfg_tmp_path:-${TEMP:-${TMP:-${DeploySrcRoot}}}}" )
+	TmpPath=$( PathWinToUnix "${cfg_tmp_path:-${DeploySrcRoot}}" )
 	TmpPath=$( FolderAbsolutePath "${TmpPath}" )
 	InfoMessage "    temporary files path = \"${TmpPath}\""
 

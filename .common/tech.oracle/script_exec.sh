@@ -38,9 +38,9 @@ case "${x_action}" in
 			"${SqlLoaderBinary}" \
 				userid="${l_connect}" \
 				control=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" ) \
-				log=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" ) \
+				log=$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" ) \
 				2>&1 \
-				> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+				> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 				|| scriptReturnCode=$?
 
 		else
@@ -74,7 +74,7 @@ case "${x_action}" in
 
 			EOF
 
-			echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 			cat >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -129,13 +129,13 @@ case "${x_action}" in
 
 			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 			"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
-				2> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+				2> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 				|| scriptReturnCode=$?
 
 			l_lines_OK=$(
 				${local_grep} -Ei \
 					"^(it's\s*\.\.\.|---\s*(setting\s+up\s+deployment\s+config\s+vars\s*$|turning\s+sql\*plus\s+defines|running\s+the\s+script|done\s*$))" \
-					"${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" \
+					"${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" \
 					| wc -l
 			) || ThrowException "Spool file missing?"
 
@@ -146,7 +146,7 @@ case "${x_action}" in
 		;;
 
 	(cleanup)
-		rm "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
+		rm "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
 		rm -f "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" 2> /dev/null
 		rm -f "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" 2> /dev/null
 		;;

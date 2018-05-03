@@ -1,7 +1,7 @@
 #!/bin/bash
 
-[ -n "${LogFolder}" ] || LogFolder="${DeploySrcRoot}" || LogFolder=$( dirname "$0" )/log
-[ -d "${LogFolder}" ] || mkdir "${LogFolder}"
+[ -n "${g_LogFolder}" ] || g_LogFolder="${DeploySrcRoot}" || g_LogFolder=$( dirname "$0" )/log
+[ -d "${g_LogFolder}" ] || mkdir "${g_LogFolder}"
 
 LogFileStub="${LogFileStub:-run_deploy}"
 LogFileName="${LogFileStub}."$( date +%Y%m%d )".log"
@@ -10,7 +10,7 @@ function DoLog()
 {
 	local LogTimeStamp=$( date "+%Y-%m-%d %H:%M:%S" )
 	for param in "$@" ; do
-		echo \[${LogTimeStamp}/$$\] "${param}" >> "${LogFolder}/${LogFileName}"
+		echo \[${LogTimeStamp}/$$\] "${param}" >> "${g_LogFolder}/${LogFileName}"
 	done
 }
 
