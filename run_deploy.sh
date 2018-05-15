@@ -176,7 +176,11 @@ if [ -n "${gx_Env}" ] ; then
 		for l_cfg_ovd in "${gx_ConfigValueOverrides[@]}" ; do
 			l_cfg_ovd_name="${l_cfg_ovd%%=*}"
 			l_cfg_ovd_value="${l_cfg_ovd#*=}"
-			InfoMessage "        switch \"${l_cfg_ovd_name}\" from \"${!l_cfg_ovd_name:-}\" to \"${l_cfg_ovd_value}\""
+			if [[ "${l_cfg_ovd_name}" =~ passw(or)?d$ ]] ; then
+				InfoMessage "        switch \"${l_cfg_ovd_name}\" from \"${!l_cfg_ovd_name:-}\" to \"*****\""
+			else
+				InfoMessage "        switch \"${l_cfg_ovd_name}\" from \"${!l_cfg_ovd_name:-}\" to \"*****\""
+			fi
 			eval "${l_cfg_ovd_name}='${l_cfg_ovd_value}'"
 		done
 	fi
