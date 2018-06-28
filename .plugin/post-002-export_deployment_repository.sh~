@@ -1,0 +1,20 @@
+#!/bin/bash
+set -o errexit
+set -o errtrace
+set -o functrace
+set -o pipefail
+set -o nounset
+[ -n "${DEBUG:-}" ] && set -x # xtrace
+
+# -------------------------------------------------------------------------------------------------
+
+[ "${gx_Env}" = local ] || exit 0
+
+InfoMessage "        Exporting deployment repository"
+
+cd "${DeploySrcRoot}/../repo"
+tech-oracle-get_connect_string l_connect deploy_repo
+
+l_sqlplus_script_file=$( PathUnixToWin "${DeploySrcRoot}/../_aux/data export/table_to_sqlldr_ctl.sql" )
+"${SqlPlusBinary}" -L -S "${l_connect}" @"${l_sqlplus_script_file}" v_db_deployment_ok "txt_folder, txt_script_file, nam_deploy_tgt" \
+	|| ThrowException "SQL*Plus failed"
