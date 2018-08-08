@@ -161,7 +161,18 @@ begin
 		scr_ver('base/_update_meta.sql 14', 14),
 		--
 		scr_ver('v15/c_db_script_file_extension.drop.sql', 15),
-		scr_ver('base/_update_meta.sql 15', 15)
+		scr_ver('base/_update_meta.sql 15', 15),
+		--
+		scr_ver('v16/multi-tenancy.01-app.sql', 16),
+		scr_ver('v16/multi-tenancy.02-increment.sql', 16),
+		scr_ver('v16/multi-tenancy.03-increment-fillup.sql', 16),
+		scr_ver('v16/multi-tenancy.04-script-exec.sql', 16),
+		scr_ver('v16/multi-tenancy.05-script-exec-fillup.sql', 16),
+		scr_ver('v16/multi-tenancy.06-deployment.sql', 16),
+		scr_ver('v16/multi-tenancy.07-deployment-fillup.sql', 16),
+		scr_ver('v16/multi-tenancy.08-v_db_deployment.vw', 16),
+		scr_ver('v16/multi-tenancy.09-v_db_deployment_ok.all.trg', 16),
+		scr_ver('base/_update_meta.sql 16', 16)
 	);
 
 	l_cnt_scripts_higher_ver := scr.count();

@@ -15,9 +15,11 @@ case "${x_action}" in
 		InfoMessage "    prepare"
 		set \
 			| ${local_grep} -Ei '^dpltgt_deploy_repo_' \
-			| ${local_sed} 's/^dpltgt_\(.*\)\s*=\s*\(.*\)\s*$/define \1 = \2/g' \
+			| ${local_sed} 's/^dpltgt_\(.*\)\s*=\s*\(.*\)\s*$/define \1 = "\2"/g' \
 			| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
 			>> "_deploy_repo_defines.${RndToken}.tmp"
+
+		echo "define deploy_cfg_app_id = '${cfg_app_id}'" >> "_deploy_repo_defines.${RndToken}.tmp"
 
 		InfoMessage "    execute"
 		"${SqlPlusBinary}" -L -S "${gOracle_repoDbConnect}" @_deploy_repository.sql ${RndToken} \
@@ -141,7 +143,8 @@ case "${x_action}" in
 			set FX.fip_finish = current_timestamp,
 			    FX.num_return_code = ${x_script_return_code},
 			    FX.txt_script_spool = empty_clob(),
-			    FX.txt_script_stderr = empty_clob()
+			    FX.txt_script_stderr = empty_clob(),
+			    FX.app_v_id = (select app_v_id from t_db_app where ${scriptReturnCode} = 0)
 			where FX.id_db_script_execution = ${x_id_script_execution}
 			returning txt_script_spool, txt_script_stderr
 				into :l_script_spool, :l_script_stderr
@@ -237,7 +240,8 @@ case "${x_action}" in
 				FX.fip_finish = current_timestamp,
 			    FX.num_return_code = ${scriptReturnCode},
 			    FX.txt_script_spool = '${fakeMsg}',
-			    FX.txt_script_stderr = null
+			    FX.txt_script_stderr = null,
+			    FX.app_v_id = (select app_v_id from t_db_app where ${scriptReturnCode} = 0)
 			where FX.id_db_script_execution = ${x_id_script_execution};
 
 			commit;
@@ -275,6 +279,8 @@ case "${x_action}" in
 		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.merge_increments_to_repo.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
+
+			define deploy_cfg_app_id = '${cfg_app_id}'
 
 			col "It's ..." format a40
 			select user||'@'||global_name as "It's ..." from global_name;
@@ -329,7 +335,7 @@ case "${x_action}" in
 			set autoprint off
 			set autotrace off
 			set echo off
-			set define off
+			set define on
 			set feedback off
 			set heading off
 			set headsep off
@@ -346,6 +352,8 @@ case "${x_action}" in
 	
 			set exitcommit off
 	
+			define deploy_cfg_app_id = '${cfg_app_id}'
+
 		EOF
 	
 		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.tmp" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
@@ -375,6 +383,8 @@ case "${x_action}" in
 			set termout off
 			set echo off
 			set feedback on
+
+			define deploy_cfg_app_id = '${cfg_app_id}'
 	
 		EOF
 	

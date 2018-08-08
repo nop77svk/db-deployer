@@ -50,11 +50,18 @@ insert into tt_db_deploy_tgt (txt_config_var_assignment) values (q'{dbgrp_upward
 */
 
 var l_new_deployment_id number;
+var l_app_v_id number;
+
+prompt --- Lock the app for deployment
+
+exec select app_v_id into :l_app_v_id from t_db_app where app_id = '&deploy_cfg_app_id' for update;
+
+print :l_app_v_id;
 
 prompt --- Set up a new deployment
 
-insert into t_db_deployment (id_db_deployment, xml_environment)
-values (seq_db_deployment.nextval, null)
+insert into t_db_deployment (id_db_deployment, app_id, xml_environment)
+values (seq_db_deployment.nextval, '&deploy_cfg_app_id', null)
 returning id_db_deployment
 into :l_new_deployment_id;
 
@@ -82,7 +89,8 @@ using (
             'SESSION_EDITION_NAME', 'SESSION_USER', 'SID', 'TERMINAL'
         )) X
 ) S
-on (T.id_db_deployment = :l_new_deployment_id)
+on ( T.id_db_deployment = :l_new_deployment_id
+    and T.app_id = '&deploy_cfg_app_id' )
 when matched then
     update
     set T.xml_environment = S.xml_environment
@@ -106,20 +114,20 @@ prompt --- Set up the list of scripts to be executed
 
 insert into t_db_script_execution
 	( id_db_script_execution, id_db_deployment, id_db_script, nam_deploy_target, num_order,
-	num_return_code,
+	num_return_code, app_v_id,
 	fip_start, fip_finish )
 with xyz as (
     select I.dat_folder, F.id_db_script, F.num_order as script_order, F.nam_schema_id, DT.nam_atomic_target, DT.target_order,
-        row_number() over (partition by null order by I.dat_folder asc, F.num_order asc, DT.target_order asc) as script_run_order
+        row_number() over (partition by I.app_id order by I.dat_folder asc, F.num_order asc, DT.target_order asc) as script_run_order
     from t_db_script F
         join t_db_increment I
             on I.id_db_increment = F.id_db_increment
         left join vt_db_deploy_tgt_grp_resolve DT
             on DT.id_db_deployment = :l_new_deployment_id
             and DT.nam_target = F.nam_schema_id
-    where
-        not exists (
-            select 1
+    where I.app_id = '&deploy_cfg_app_id'
+        and not exists (
+            select *
             from t_db_script_execution FX
             where FX.id_db_script = F.id_db_script
                 and FX.nam_deploy_target = DT.nam_atomic_target
@@ -133,6 +141,7 @@ select seq_db_deployment.nextval, :l_new_deployment_id, id_db_script, nam_atomic
         when dat_folder >= sysdate+1/24 then -2
         else null
     end as num_return_code,
+    case when '&script_action' = 'sync-only' then :l_app_v_id end as app_v_id,
     case
         when '&script_action' = 'sync-only' then systimestamp
         when dat_folder >= sysdate+1/24 then systimestamp

@@ -216,6 +216,12 @@ if [ "${gx_Action}" != "help" ] ; then
 
 	DeployRepoTech="${dpltgt_deploy_repo_tech:-oracle}"
 	InfoMessage "    deployment repository technology = \"${DeployRepoTech}\""
+
+	InfoMessage "    application identifier = \"${cfg_app_id:-}\""
+	[ -n "${cfg_app_id:-}" ] || ThrowException "Application (= deployment repository tenant) identifier is not set"
+	if echo "${cfg_app_id}" | grep -qEv '^[A-Za-z][A-Za-z0-9_-]*$' ; then
+		ThrowException "Application identifier contains unallowed characters"
+	fi
 fi
 
 # ------------------------------------------------------------------------------------------------

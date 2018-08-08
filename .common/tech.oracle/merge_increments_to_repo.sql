@@ -97,14 +97,17 @@ declare
         pragma exception_init(E_Bulk_DML_Error, -24381);
     l_failed_packages               varchar2(1000);
     --
-    cursor cur_db_package           is
+    cursor cur_db_package
+        ( i_app_id                  in t_db_app_v.app_id%type )
+    is
         with unique_new_paths$ as (
             select unique FP.txt_path
             from vtt_db_inc_script_path FP
             where not exists (
-                select 1
+                select *
                 from t_db_increment I
                 where I.txt_folder = FP.txt_path
+                    and I.app_id = i_app_id
             )
         )
         select txt_path
@@ -113,20 +116,30 @@ declare
     subtype rec_db_package          is cur_db_package%rowtype;
     type arr_db_package             is table of rec_db_package index by pls_integer;
     l_db_package                    arr_db_package;
+    --
+    l_app_id                        constant t_db_app.app_id%type := '&deploy_cfg_app_id';
+    l_app_v_id                      t_db_app.app_v_id%type;
 begin
     savepoint sp_merge_packages;
 
-    lock table t_db_increment in share mode wait 3;
-    lock table tt_db_full_inc_script_path in share mode wait 3;
+--    lock table t_db_increment in share mode wait 3;
+--    lock table tt_db_full_inc_script_path in share mode wait 3;
 
-    open cur_db_package;
+    begin
+        insert into t_db_app (app_id) values (l_app_id);
+    exception
+        when dup_val_on_index then
+            select app_v_id into l_app_v_id from t_db_app where app_id = l_app_id for update;
+    end;
+
+    open cur_db_package(l_app_id);
     fetch cur_db_package bulk collect into l_db_package;
     close cur_db_package;
 
     begin
         forall i in indices of l_db_package save exceptions
-            insert into t_db_increment (id_db_increment, txt_folder)
-            values (seq_db_deployment.nextval, l_db_package(i).txt_path);
+            insert into t_db_increment (app_id, id_db_increment, txt_folder)
+            values (l_app_id, seq_db_deployment.nextval, l_db_package(i).txt_path);
     exception
         when E_Bulk_DML_Error then
             begin
@@ -157,13 +170,15 @@ declare
         pragma exception_init(E_Bulk_DML_Error, -24381);
     l_failed_scripts                varchar2(1000);
     --
-    cursor cur_db_script            is
+    cursor cur_db_script
+        ( i_app_id                  in t_db_app_v.app_id%type )
+    is
         select I.id_db_increment, FP.txt_path, FP.txt_file
         from vtt_db_inc_script_path FP
             join t_db_increment I
                 on I.txt_folder = FP.txt_path
-        where
-            not exists (
+        where I.app_id = i_app_id
+            and not exists (
                 select 1
                 from t_db_script F
                 where F.id_db_increment = I.id_db_increment
@@ -172,13 +187,17 @@ declare
     subtype rec_db_script           is cur_db_script%rowtype;
     type arr_db_script              is table of rec_db_script index by pls_integer;
     l_db_script                     arr_db_script;
+    l_app_id                        constant t_db_app.app_id%type := '&deploy_cfg_app_id';
+    l_app_v_id                      t_db_app.app_v_id%type;
 begin
     savepoint sp_merge_scripts;
 
-    lock table t_db_increment in share mode wait 3;
-    lock table tt_db_full_inc_script_path in share mode wait 3;
+--    lock table t_db_increment in share mode wait 3;
+--    lock table tt_db_full_inc_script_path in share mode wait 3;
 
-    open cur_db_script;
+    select app_v_id into l_app_v_id from t_db_app where app_id = l_app_id for update;
+
+    open cur_db_script(l_app_id);
     fetch cur_db_script bulk collect into l_db_script;
     close cur_db_script;
 
@@ -210,13 +229,15 @@ end;
 
 prompt --- checking the repository for obvious errors
 
+declare
+    l_app_id                        constant t_db_app.app_id%type := '&deploy_cfg_app_id';
 begin
     for cv in (
         with detect$ as (
             select
-                id_db_increment, I.txt_folder, max(FX.fip_finish) over (partition by id_db_increment) as d_inc_finish,
+                app_id, id_db_increment, I.txt_folder, max(FX.fip_finish) over (partition by id_db_increment) as d_inc_finish,
                 id_db_script, F.txt_script_file, F.num_order, FX.fip_start as d_scr_start, FX.fip_finish as d_scr_finish,
-                count(FX.fip_start) over (partition by id_db_increment order by F.num_order asc rows between current row and unbounded following) as scripts_started_after
+                count(FX.fip_start) over (partition by I.app_id, id_db_increment order by F.num_order asc rows between current row and unbounded following) as scripts_started_after
             from t_db_increment I
                 join t_db_script F
                     using (id_db_increment)
@@ -226,6 +247,7 @@ begin
                     group by id_db_script
                 ) FX
                     using (id_db_script)
+            where I.app_id = l_app_id
         )
         select *
         from detect$

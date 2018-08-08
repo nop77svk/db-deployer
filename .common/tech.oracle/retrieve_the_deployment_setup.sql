@@ -2,7 +2,8 @@ with last_deploy$ as (
     select *
     from (
         select id_db_deployment as last_id_db_deployment
-        from t_db_deployment
+        from t_db_deployment D
+        where app_id = '&deploy_cfg_app_id'
         order by fip_create desc
     )
     where rownum <= 1
@@ -19,6 +20,7 @@ output$ as (
             on F.id_db_script = FX.id_db_script
         join t_db_increment I
             on I.id_db_increment = F.id_db_increment
+            and I.app_id = '&deploy_cfg_app_id'
 )
 select id_db_script_execution||'|'||num_order||'|'||id_db_script||'|'||id_db_increment||'|'||nam_schema_id||'|'||txt_folder||'|'||txt_script_file
 from output$
