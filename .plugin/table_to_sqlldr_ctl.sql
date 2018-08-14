@@ -1,8 +1,8 @@
 whenever sqlerror exit sql.sqlcode rollback
 whenever oserror exit failure rollback
 
-define TABLE_NAME = 'v_db_deployment_ok'
-define ORDERING_COLUMNS = 'txt_folder, txt_script_file, nam_deploy_target'
+define TABLE_NAME = '&1'
+define ORDERING_COLUMNS = '&2'
 
 rem prompt Generating CTL-file for table "&TABLE_NAME" with ordering of "&ORDERING_COLUMNS" ...
 

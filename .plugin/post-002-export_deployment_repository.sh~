@@ -16,5 +16,5 @@ cd "${DeploySrcRoot}/../repo"
 tech-oracle-get_connect_string l_connect deploy_repo
 
 l_sqlplus_script_file=$( PathUnixToWin "${DeploySrcRoot}/../_aux/data export/table_to_sqlldr_ctl.sql" )
-"${SqlPlusBinary}" -L -S "${l_connect}" @"${l_sqlplus_script_file}" v_db_deployment_ok "txt_folder, txt_script_file, nam_deploy_tgt" \
+"${SqlPlusBinary}" -L -S "${l_connect}" @"${l_sqlplus_script_file}" v_db_deployment_ok "app_id, txt_folder, txt_script_file, nam_deploy_target" \
 	|| ThrowException "SQL*Plus failed"
