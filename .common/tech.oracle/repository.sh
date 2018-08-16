@@ -112,7 +112,7 @@ case "${x_action}" in
 			set autoprint off
 			set autotrace off
 			set echo on
-			set define off
+			set define on
 			set escape off
 			set feedback on
 			set heading on
@@ -127,6 +127,8 @@ case "${x_action}" in
 
 			set exitcommit on
 			set serveroutput on size unlimited format truncated
+
+			define deploy_cfg_app_id = '${cfg_app_id}'
 
 		EOF
 
@@ -144,11 +146,13 @@ case "${x_action}" in
 			    FX.num_return_code = ${x_script_return_code},
 			    FX.txt_script_spool = empty_clob(),
 			    FX.txt_script_stderr = empty_clob(),
-			    FX.app_v_id = (select app_v_id from t_db_app where ${scriptReturnCode} = 0)
+			    FX.app_v_id = (select app_v_id from t_db_app where ${scriptReturnCode} = 0 and app_id = '&deploy_cfg_app_id')
 			where FX.id_db_script_execution = ${x_id_script_execution}
 			returning txt_script_spool, txt_script_stderr
 				into :l_script_spool, :l_script_stderr
 			;
+
+			set define off
 
 		EOF
 
@@ -211,7 +215,7 @@ case "${x_action}" in
 			set autoprint off
 			set autotrace off
 			set echo on
-			set define off
+			set define on
 			set escape off
 			set feedback on
 			set heading on
@@ -225,6 +229,8 @@ case "${x_action}" in
 			set wrap on
 
 			set exitcommit on
+
+			define deploy_cfg_app_id = '${cfg_app_id}'
 
 		EOF
 
@@ -241,7 +247,7 @@ case "${x_action}" in
 			    FX.num_return_code = ${scriptReturnCode},
 			    FX.txt_script_spool = '${fakeMsg}',
 			    FX.txt_script_stderr = null,
-			    FX.app_v_id = (select app_v_id from t_db_app where ${scriptReturnCode} = 0)
+			    FX.app_v_id = (select app_v_id from t_db_app where ${scriptReturnCode} = 0 and app_id = '&deploy_cfg_app_id')
 			where FX.id_db_script_execution = ${x_id_script_execution};
 
 			commit;

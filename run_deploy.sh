@@ -309,10 +309,11 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" -o "${gx_Action}" = "syn
 	InfoMessage "    Fetching the complete list of increment script files"
 	cd "${DeploySrcRoot}"
 
+# 2do! do not ignore the "deploy_repo" target; do a limited set of actions instead!
 	if [ ${OStype} = "cygwin" -o ${OStype} = "linux" ] ; then
-		${local_find} . -mindepth 2 -not -path './.*/*' -not -name '*.~???' -not -name '*.???~' -type f | ${local_sed} 's/^\.\///g' > "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp"
+		${local_find} . -mindepth 2 -not -path './.*/*' -not -name '*.~???' -not -name '*.???~' -not -name '*;deploy_repo.*' -type f | ${local_sed} 's/^\.\///g' > "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp"
 	else if [ ${OStype} = "SunOS" ] ; then
-		${local_find} . ! -name '*.???~' ! -name '*.~???' -type f | ${local_grep} -Evi '^\.\/\..*\/' 2> /dev/null | ${local_gawk} -v depf=2 -v FS='/' 'NF>=(1+depf)' > "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp"
+		${local_find} . ! -name '*.???~' ! -name '*.~???' ! -name '*;deploy_repo.*' -type f | ${local_grep} -Evi '^\.\/\..*\/' 2> /dev/null | ${local_gawk} -v depf=2 -v FS='/' 'NF>=(1+depf)' > "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp"
 	else
 		ThrowException "ERROR: Unknown OS type!"
 	fi ; fi

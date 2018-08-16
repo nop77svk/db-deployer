@@ -172,7 +172,10 @@ begin
 		scr_ver('v16/multi-tenancy.07-deployment-fillup.sql', 16),
 		scr_ver('v16/multi-tenancy.08-v_db_deployment.vw', 16),
 		scr_ver('v16/multi-tenancy.09-v_db_deployment_ok.all.trg', 16),
-		scr_ver('base/_update_meta.sql 16', 16)
+		scr_ver('base/_update_meta.sql 16', 16),
+		--
+		scr_ver('v17/multi-tenancy.01-fix_increment.sql', 17),
+		scr_ver('base/_update_meta.sql 17', 17)
 	);
 
 	l_cnt_scripts_higher_ver := scr.count();
