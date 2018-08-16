@@ -126,7 +126,7 @@ begin
 --    lock table tt_db_full_inc_script_path in share mode wait 3;
 
     begin
-        insert into t_db_app (app_id) values (l_app_id);
+        insert into t_db_app (app_id, ver_major, ver_minor, ver_maintenance, codename) values (l_app_id, 0, 0, 0, 'prototype');
     exception
         when dup_val_on_index then
             select app_v_id into l_app_v_id from t_db_app where app_id = l_app_id for update;
