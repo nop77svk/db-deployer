@@ -25,7 +25,7 @@ mkdir "${Here}/${g_DepPackTmpFolder}"
 cd "${Here}/${g_DepPackTmpFolder}"
 
 ( base64 --decode --ignore-garbage | tar xvz --no-same-owner ) <<-DependencyPack
-<base64-encoded gzip'd tar'd deployment tree comes here>
+<put here the output from "tar c . | gzip -9c | base64">
 DependencyPack
 
 # -------------------------------------------------------------------------------------------------
