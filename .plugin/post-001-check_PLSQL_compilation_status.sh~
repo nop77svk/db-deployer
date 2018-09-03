@@ -4,91 +4,106 @@ set -o errtrace
 set -o functrace
 set -o pipefail
 set -o nounset
-[ -n "${DEBUG:-}" ] && set -x # xtrace
+[ -n "${DEBUG:=}" ] && set -x # xtrace
 
 # -------------------------------------------------------------------------------------------------
 
 TargetsToCheck=( bimp bimp_appl )
 
-InfoMessage "        Autochecking PLSQL codebase for compilation errors"
-cd "${ScriptPath}"
+InfoMessage "        Autochecking PLSQL codebase, views for compilation errors"
 
-cat > "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql" <<-EOF
-	whenever sqlerror exit 1 rollback
-	whenever oserror exit 2 rollback
+# 2do! implement _flags containing noplsqlcheck option
+if [ -z "${TargetsToCheck:-}" ] ; then
+	TargetsToCheck=( $(
+		set \
+			| ${local_grep} -Ei '^dpltgt_' \
+			| ${local_grep} -Evi '^dpltgt_deploy_repo_' \
+			| ${local_sed} 's/^dpltgt_\(.*\)_\(db\|user\|flags\)\s*=\s*\(.*\)\s*$/\1/g' \
+			| ${local_sort} -u
+	) )
+	InfoMessage "            autodetermined targets to be checked = ${TargetsToCheck[*]}"
+else
+	InfoMessage "            supplied targets to be checked = ${TargetsToCheck[*]}"
+fi
 
-	set autoprint off
-	set autotrace off
-	set echo off
-	set define off
-	set feedback on
-	set heading off
-	set headsep off
-	set linesize 2048
-	set newpage none
-	set recsep off
-	set serveroutput on size unlimited format word_wrapped
-	set tab on
-	set termout off
-	set trimout on
-	set trimspool on
-	set verify off
-	set wrap off
+if [ -n "${TargetsToCheck:-}" ] ; then
+	cd "${ScriptPath}"
 
-	set exitcommit off
+	cat > "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql" <<-EOF
+		whenever sqlerror exit 1 rollback
+		whenever oserror exit 2 rollback
 
-EOF
+		set autoprint off
+		set autotrace off
+		set echo off
+		set define off
+		set feedback on
+		set heading off
+		set headsep off
+		set linesize 2048
+		set newpage none
+		set recsep off
+		set serveroutput on size unlimited format word_wrapped
+		set tab on
+		set termout off
+		set trimout on
+		set trimspool on
+		set verify off
+		set wrap off
 
-spoolFile="${g_LogFolder}/${gx_Env}.autocheck_plsql.${RndToken}.log"
-spoolFileWin=$( PathUnixToWin "${spoolFile}" )
-echo "spool \"${spoolFileWin}\"" >> "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql"
+		set exitcommit off
 
-cat >> "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql" <<-EOF
-	prompt --- recompiling schema
-	exec phr_utl_deploy.recompile_schema();
+	EOF
 
-	show errors
+	spoolFile="${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.log"
+	spoolFileWin=$( PathUnixToWin "${spoolFile}" )
+	echo "spool \"${spoolFileWin}\"" >> "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql"
 
-	prompt --- checking PLSQL code status
-	exec phr_utl_deploy.check_plsql_status();
+	cat >> "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql" <<-EOF
+		prompt --- recompiling schema
+		exec phr_utl_deploy.recompile_schema();
 
-	prompt --- setting the broken mview refresh jobs to work again
+		show errors
 
-	begin
-	    for cv in (
-	        select job, last_date, next_date, broken, failures, what
-	        from user_jobs
-	        where lower(what) like '%dbms!_refresh.refresh%' escape '!'
-	            and ( next_date >= sysdate + 2 or lnnvl(broken = 'N') )
-	    ) loop
-	        dbms_job.broken(
-	            job => cv.job,
-	            broken => false
-	        );
-	        dbms_output.put_line('job #'||cv.job||' unbroken OK');
-	    end loop;
-	end;
-	/
+		prompt --- checking PLSQL code status
+		exec phr_utl_deploy.check_plsql_status();
 
-	exit success
-EOF
+		prompt --- setting the broken mview refresh jobs to work again
 
-for l_target in ${TargetsToCheck[@]} ; do
-	InfoMessage "            processing target \"${l_target}\""
+		begin
+		    for cv in (
+		        select job, last_date, next_date, broken, failures, what
+		        from user_jobs
+		        where lower(what) like '%dbms!_refresh.refresh%' escape '!'
+		            and ( next_date >= sysdate + 2 or lnnvl(broken = 'N') )
+		    ) loop
+		        dbms_job.broken(
+		            job => cv.job,
+		            broken => false
+		        );
+		        dbms_output.put_line('job #'||cv.job||' unbroken OK');
+		    end loop;
+		end;
+		/
 
-	tech-oracle-get_connect_string l_connect "${l_target}"
-	tech-oracle-get_connect_string l_connect_obfuscated "${l_target}" obfuscate-password
+		exit success
+	EOF
 
-	DoLog "                target credentials = \"${l_connect_obfuscated}\""
+	for l_target in ${TargetsToCheck[@]} ; do
+		InfoMessage "            processing target \"${l_target}\""
 
-	l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql" )
-	"${SqlPlusBinary}" -L -S "${l_connect}" @"${l_sqlplus_script_file}" "${l_target}" \
-		|| ThrowException "SQL*Plus failed"
+		tech-oracle-get_connect_string l_connect "${l_target}"
+		tech-oracle-get_connect_string l_connect_obfuscated "${l_target}" obfuscate-password
 
-	spoolFileTargeted="${g_LogFolder}/${gx_Env}.autocheck_plsql.${l_target}.${RndToken}.log"
-	mv -f "${spoolFile}" "${spoolFileTargeted}"
-done
+		DoLog "                target credentials = \"${l_connect_obfuscated}\""
 
-[ -z "${DEBUG:-}" ] || true && (
-	rm "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql"
-)
+		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql" )
+		"${SqlPlusBinary}" -L -S "${l_connect}" @"${l_sqlplus_script_file}" "${l_target}" \
+			|| ThrowException "SQL*Plus failed"
+
+		spoolFileTargeted="${TmpPath}/${gx_Env}.autocheck_plsql.${l_target}.${RndToken}.log"
+		mv -f "${spoolFile}" "${spoolFileTargeted}"
+	done
+
+	[ -z "${DEBUG}" ] && rm "${TmpPath}/${gx_Env}.autocheck_plsql.${RndToken}.sql"
+fi
