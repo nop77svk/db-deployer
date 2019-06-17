@@ -1,0 +1,11 @@
+/.hg
+/.hgignore
+/.bzr
+/.bzrignore
+
+*.~*
+~$*.???x
+~WRL*.tmp
+Thumbs.db
+*.log
+*.tmp
