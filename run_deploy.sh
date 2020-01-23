@@ -214,7 +214,7 @@ if [ "${gx_Action}" != "help" ] ; then
 
 	InfoMessage "    symbolic environment id = \"${cfg_environment:=}\""
 
-	DeployRepoTech="${dpltgt_deploy_repo_tech:-oracle}"
+	DeployRepoTech="${dpltgt_deploy_repo_tech:-oracle-sqlplus}"
 	InfoMessage "    deployment repository technology = \"${DeployRepoTech}\""
 
 	InfoMessage "    application identifier = \"${cfg_app_id:-}\""
@@ -377,7 +377,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 		# 2do! pass the l_add_info to both repository.sh and script_exec.sh
 		if [ "${l_is_fake_exec}" = "no" ] ; then
 			l_script_tech_var=dpltgt_${l_schema_id}_tech
-			l_script_tech=${!l_script_tech_var:-oracle}
+			l_script_tech=${!l_script_tech_var:-oracle-sqlplus}
 
 			InfoMessage "        pre-phase"
 

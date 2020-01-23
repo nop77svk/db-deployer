@@ -16,7 +16,7 @@ case "${x_action}" in
 		x_script_folder="$5"
 		x_script_file="$6"
 
-		tech-oracle-get_connect_string l_connect "${x_schema_id}"
+		tech-oracle-sqlplus-get_connect_string l_connect "${x_schema_id}"
 		
 		# determine the "defines" flag
 		l_script_file_ext=${x_script_file##*.}

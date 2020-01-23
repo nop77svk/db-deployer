@@ -92,8 +92,8 @@ if [ -n "${TargetsToCheck:-}" ] ; then
 	for l_target in ${TargetsToCheck[@]} ; do
 		InfoMessage "            processing target \"${l_target}\""
 
-		tech-oracle-get_connect_string l_connect "${l_target}"
-		tech-oracle-get_connect_string l_connect_obfuscated "${l_target}" obfuscate-password
+		tech-oracle-sqlplus-get_connect_string l_connect "${l_target}"
+		tech-oracle-sqlplus-get_connect_string l_connect_obfuscated "${l_target}" obfuscate-password
 
 		DoLog "                target credentials = \"${l_connect_obfuscated}\""
 

@@ -37,7 +37,7 @@ case "$x_action" in
 
 		# ----------------------------------------------------------------------------------------------
 
-		function tech-oracle-get_connect_string()
+		function tech-oracle-sqlplus-get_connect_string()
 		{
 			if bash__SupportsVariableReferences ; then
 				declare -n o_result=$1
@@ -45,7 +45,7 @@ case "$x_action" in
 				local o_result
 			fi
 
-			[ -n "${2:-}" ] || ThrowException "No target id supplied in call to tech-oracle-get_connect_string()"
+			[ -n "${2:-}" ] || ThrowException "No target id supplied in call to tech-oracle-sqlplus-get_connect_string()"
 			local x_target_id="$2"
 			local x_pass_flag="${3:-}"
 
@@ -89,8 +89,8 @@ case "$x_action" in
 			>> "${gOracle_dbDefinesScriptFile}"
 
 		if [ "${DeployRepoTech}" = "oracle" ] ; then
-			tech-oracle-get_connect_string gOracle_repoDbConnect deploy_repo
-			tech-oracle-get_connect_string lOracle_repoDbConnectObfuscated deploy_repo obfuscate-password
+			tech-oracle-sqlplus-get_connect_string gOracle_repoDbConnect deploy_repo
+			tech-oracle-sqlplus-get_connect_string lOracle_repoDbConnectObfuscated deploy_repo obfuscate-password
 
 			InfoMessage "        deployment repository connection = \"${lOracle_repoDbConnectObfuscated}\""
 		fi

@@ -10,7 +10,7 @@ x_action="$1"
 
 case "${x_action}" in
 	(initialize)
-		cd "${CommonsPath}/tech.oracle/repo_ddl"
+		cd "${CommonsPath}/tech.oracle-sqlplus/repo_ddl"
 
 		InfoMessage "    prepare"
 		set \
@@ -160,7 +160,7 @@ case "${x_action}" in
 			| gzip -9cn \
 			| base64 \
 			| ${local_gawk} \
-				-f "${CommonsPath}/tech.oracle/gzip_base64_to_sqlplus.awk" \
+				-f "${CommonsPath}/tech.oracle-sqlplus/gzip_base64_to_sqlplus.awk" \
 				-v 'outputClobVarName=l_script_spool' \
 			>> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
@@ -168,7 +168,7 @@ case "${x_action}" in
 			| gzip -9cn \
 			| base64 \
 			| ${local_gawk} \
-				-f "${CommonsPath}/tech.oracle/gzip_base64_to_sqlplus.awk" \
+				-f "${CommonsPath}/tech.oracle-sqlplus/gzip_base64_to_sqlplus.awk" \
 				-v 'outputClobVarName=l_script_stderr' \
 			>> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
@@ -300,7 +300,7 @@ case "${x_action}" in
 		EOF
 	
 		cat "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp" \
-			| ${local_gawk} -f "${CommonsPath}/tech.oracle/full_script_list_to_sql_inserts.awk" \
+			| ${local_gawk} -f "${CommonsPath}/tech.oracle-sqlplus/full_script_list_to_sql_inserts.awk" \
 			>> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
@@ -311,7 +311,7 @@ case "${x_action}" in
 	
 		EOF
 	
-		echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
+		echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
 			prompt --- DONE synchronizing repository
@@ -363,7 +363,7 @@ case "${x_action}" in
 		EOF
 	
 		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.tmp" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
-		echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
+		echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" <<-EOF
 	
@@ -403,9 +403,9 @@ case "${x_action}" in
 	
 		echo 'prompt --- calling set_up_deployment_run.sql' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		if [ "${x_deploy_action}" = "sync" ] ; then
-			echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+			echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		else
-			echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+			echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		fi
 		echo '' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	
