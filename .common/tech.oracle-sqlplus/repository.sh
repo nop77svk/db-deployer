@@ -311,7 +311,7 @@ case "${x_action}" in
 			prompt --- now about to synchronize the repository
 		EOF
 	
-		echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
+		echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
 			prompt --- DONE synchronizing the repository
@@ -363,7 +363,7 @@ case "${x_action}" in
 		EOF
 	
 		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.tmp" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
-		echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
+		echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" <<-EOF
 	
@@ -403,9 +403,9 @@ case "${x_action}" in
 	
 		echo 'prompt --- calling set_up_deployment_run.sql' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		if [ "${x_deploy_action}" = "sync" ] ; then
-			echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+			echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		else
-			echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+			echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		fi
 		echo '' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	

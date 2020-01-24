@@ -85,7 +85,7 @@ case "${x_action}" in
 
 			EOF
 
-			echo '@@"'$( PathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			echo '@"'$( PathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 			cat >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -96,7 +96,7 @@ case "${x_action}" in
 
 			EOF
 
-			echo '@@"'$( PathUnixToWin "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			echo '@"'$( PathUnixToWin "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 			cat >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
