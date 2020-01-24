@@ -308,13 +308,13 @@ case "${x_action}" in
 			select count(1) as temp_records_after from tt_db_full_inc_script_path;
 	
 			set feedback on
-	
+			prompt --- now about to synchronize the repository
 		EOF
 	
 		echo '@@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
-			prompt --- DONE synchronizing repository
+			prompt --- DONE synchronizing the repository
 	
 			commit;
 	

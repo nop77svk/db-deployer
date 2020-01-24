@@ -88,7 +88,7 @@ case "$x_action" in
 			| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
 			>> "${gOracle_dbDefinesScriptFile}"
 
-		if [ "${DeployRepoTech}" = "oracle" ] ; then
+		if [ "${DeployRepoTech}" = "oracle-sqlplus" ] ; then
 			tech-oracle-sqlplus-get_connect_string gOracle_repoDbConnect deploy_repo
 			tech-oracle-sqlplus-get_connect_string lOracle_repoDbConnectObfuscated deploy_repo obfuscate-password
 
