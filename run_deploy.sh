@@ -203,7 +203,7 @@ if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "Further configuring the deployer"
 
 	TmpPath=$( EchoPathWinToUnix "${cfg_tmp_path:-${DeploySrcRoot}}" )
-	TmpPath=$( FolderAbsolutePath "${TmpPath}" )
+	TmpPath=$( EchoFolderAbsolutePath "${TmpPath}" )
 	InfoMessage "    temporary files path = \"${TmpPath}\""
 
 	GlobalPluginsPath="${ScriptPath}/.plugin"
