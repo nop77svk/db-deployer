@@ -72,7 +72,7 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+		echo 'spool "'$( EchoPathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 		cat >> "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -92,7 +92,7 @@ case "${x_action}" in
 
 		scriptReturnCode=0
 
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
+		l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
 			2> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 			|| scriptReturnCode=$?
@@ -132,7 +132,7 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+		echo 'spool "'$( EchoPathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 		cat >> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -179,7 +179,7 @@ case "${x_action}" in
 			exit success
 		EOF
 
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
+		l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 
@@ -234,7 +234,7 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+		echo 'spool "'$( EchoPathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 		fakeMsg="note: a faked execution of \"${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql\""
 
 		cat >> "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
@@ -255,7 +255,7 @@ case "${x_action}" in
 			exit success
 		EOF
 
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
+		l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			2> "${g_LogFolder}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 			|| ThrowException "SQL*Plus execution exited with status of $?"
@@ -282,7 +282,7 @@ case "${x_action}" in
 
 		EOF
 
-		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.merge_increments_to_repo.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
+		echo 'spool "'$( EchoPathUnixToWin "${g_LogFolder}/${gx_Env}.merge_increments_to_repo.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
 
@@ -311,7 +311,7 @@ case "${x_action}" in
 			prompt --- now about to synchronize the repository
 		EOF
 	
-		echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
+		echo '@"'$( EchoPathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
 			prompt --- DONE synchronizing the repository
@@ -322,7 +322,7 @@ case "${x_action}" in
 			exit success
 		EOF
 	
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" )
+		l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S "${gOracle_repoDbConnect}" @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 	
@@ -362,8 +362,8 @@ case "${x_action}" in
 
 		EOF
 	
-		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.tmp" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
-		echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
+		echo 'spool "'$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.tmp" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
+		echo '@"'$( EchoPathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" <<-EOF
 	
@@ -371,7 +371,7 @@ case "${x_action}" in
 			exit success
 		EOF
 	
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" )
+		l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 		;;
@@ -394,7 +394,7 @@ case "${x_action}" in
 	
 		EOF
 	
-		echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.set_up_deployment_run.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+		echo 'spool "'$( EchoPathUnixToWin "${g_LogFolder}/${gx_Env}.set_up_deployment_run.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		echo '' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	
 		echo 'prompt --- loading deployment targets to tmp' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
@@ -403,9 +403,9 @@ case "${x_action}" in
 	
 		echo 'prompt --- calling set_up_deployment_run.sql' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		if [ "${x_deploy_action}" = "sync" ] ; then
-			echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+			echo '@"'$( EchoPathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		else
-			echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+			echo '@"'$( EchoPathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		fi
 		echo '' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	
@@ -418,7 +418,7 @@ case "${x_action}" in
 			exit success
 		EOF
 	
-		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql" )
+		l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql" )
 		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 	

@@ -74,7 +74,7 @@ function CatPathWinToUnix()
 	fi
 }
 
-function PathUnixToWin()
+function EchoPathUnixToWin()
 {
 	if [ ${OStype} = "cygwin" ] ; then
 		echo $1 | CatPathUnixToWin
@@ -83,7 +83,7 @@ function PathUnixToWin()
 	fi
 }
 
-function PathWinToUnix()
+function EchoPathWinToUnix()
 {
 	if [ ${OStype} = "cygwin" ] ; then
 		echo $1 | CatPathWinToUnix
