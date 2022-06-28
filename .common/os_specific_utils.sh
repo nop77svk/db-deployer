@@ -23,7 +23,8 @@ function bash__VersionIsAtLeast()
 	local targetMajorVersion=$1
 	local targetMinorVersion=$2
 
-	[ ${bashMajorVersion} -gt ${targetMajorVersion} -o ${bashMajorVersion} -eq ${targetMajorVersion} -a ${bashMinorVersion} -ge ${targetMinorVersion} ]
+	[ ${bashMajorVersion} -gt ${targetMajorVersion} -o ${bashMajorVersion} -eq ${targetMajorVersion} -a ${bashMinorVersion} -ge ${targetMinorVersion} ] \
+		|| ThrowException "BASH version must be at least ${targetMajorVersion}.${targetMinorVersion}"
 }
 
 function bash__SupportsVariableReferences()
