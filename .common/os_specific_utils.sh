@@ -29,7 +29,7 @@ function bash__VersionIsAtLeast()
 
 function bash__SupportsVariableReferences()
 {
-	bash__VersionIsAtLeast 4 3
+	bash__VersionIsAtLeast 4 3 || ThrowException "Variable references not supported in this BASH version"
 }
 
 # ------------------------------------------------------------------------------------------------
