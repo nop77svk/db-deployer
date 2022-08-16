@@ -557,22 +557,10 @@ fi
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "CleanUp"
 
-	set \
-		| ${local_grep} -Ei '^dpltgt_.*_tech\s*=' \
-		| ${local_sed} 's/^dpltgt_.*_tech\s*=\s*\(.*\)\s*$/\1/g' \
-		| ${local_sort} -u \
-		| ${local_gawk} '
-			{
-				print "InfoMessage \"    for " $0 "\"";
-				print ". \"${CommonsPath}/tech." $0 "/technology.sh\" teardown";
-			}' \
-		> "${TmpPath}/${gx_Env}.cleanup.${RndToken}.tmp"
-
-	. "${TmpPath}/${gx_Env}.cleanup.${RndToken}.tmp"
-
-	[ -z "${DEBUG:-}" ] || true && (
-		rm "${TmpPath}/${gx_Env}.cleanup.${RndToken}.tmp"
-	)
+	for l_tech_id in ${!g_techs_loaded[@]} ; do
+		InfoMessage "    for \"${l_tech_id}\" technology"
+		"${CommonsPath}/tech.${l_tech_id}/technology.sh" teardown
+	done
 fi
 
 # ------------------------------------------------------------------------------------------------
