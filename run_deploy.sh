@@ -277,25 +277,26 @@ fi
 # ------------------------------------------------------------------------------------------------
 
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Executing pre-deployment plugins"
+	l_plugins_found=()
 
-	[ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] \
-		&& "${local_find}" "${GlobalPluginsPath}" -name 'pre-*.sh' \
-			| "${local_sort}" -t - -k 2 -n \
-			| while read -r preScriptfile
-		do
-			InfoMessage "    ${preScriptfile} (global)"
+	if [ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] ; then
+		while read -r preScriptfile ; do
+			l_plugins_found+=("${preScriptfile}")
+		done < <( "${local_find}" "${GlobalPluginsPath}" -name 'pre-*.sh' | "${local_sort}" -t - -k 2 -n )
+	fi
+
+	if [ -d "${LocalPluginsPath}" ] ; then
+		while read -r preScriptfile ; do
+			l_plugins_found+=("${preScriptfile}")
+		done < <( "${local_find}" "${LocalPluginsPath}" -name 'pre-*.sh' | "${local_sort}" -t - -k 2 -n )
+	fi
+	
+	if (( ${#l_plugins_found[@]} )) ; then
+		InfoMessage "Executing pre-deployment plugins"
+		for preScriptfile in "${l_plugins_found[@]}" ; do
 			( . "${preScriptfile}" )
 		done
-
-	[ -d "${LocalPluginsPath}" ] \
-		&& "${local_find}" "${LocalPluginsPath}" -name 'pre-*.sh' \
-			| "${local_sort}" -t - -k 2 -n \
-			| while read -r preScriptfile
-		do
-			InfoMessage "    ${preScriptfile}"
-			( . "${preScriptfile}" )
-		done
+	fi
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -428,25 +429,26 @@ fi
 # ------------------------------------------------------------------------------------------------
 
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Executing post-deployment plugins"
+	l_plugins_found=()
 
-	[ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] \
-		&& "${local_find}" "${GlobalPluginsPath}" -name 'post-*.sh' \
-			| "${local_sort}" -t - -k 2 -n \
-			| while read -r postScriptfile
-		do
-			InfoMessage "    ${postScriptfile} (global)"
-			( . "${postScriptfile}" )
-		done
+	if [ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] ; then
+		while read -r postScriptFile ; do
+			l_plugins_found+=("${postScriptFile}")
+		done < <( "${local_find}" "${GlobalPluginsPath}" -name 'post-*.sh' | "${local_sort}" -t - -k 2 -n )
+	fi
 
-	[ -d "${LocalPluginsPath}" ] \
-		&& "${local_find}" "${LocalPluginsPath}" -name 'post-*.sh' \
-			| "${local_sort}" -t - -k 2 -n \
-			| while read -r postScriptfile
-		do
-			InfoMessage "    ${postScriptfile}"
-			( . "${postScriptfile}" )
+	if [ -d "${LocalPluginsPath}" ] ; then
+		while read -r postScriptFile ; do
+			l_plugins_found+=("${postScriptFile}")
+		done < <( "${local_find}" "${LocalPluginsPath}" -name 'post-*.sh' | "${local_sort}" -t - -k 2 -n )
+	fi
+
+	if (( ${#l_plugins_found[@]} )) ; then
+		InfoMessage "Executing post-deployment plugins"
+		for postScriptFile in "${l_plugins_found[@]}" ; do
+			( . "${postScriptFile}" )
 		done
+	fi
 fi
 
 # ------------------------------------------------------------------------------------------------
