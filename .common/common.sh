@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function FolderAbsolutePath()
+function EchoFolderAbsolutePath()
 {
 	(
 		cd "$1"

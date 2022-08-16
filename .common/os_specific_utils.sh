@@ -23,12 +23,13 @@ function bash__VersionIsAtLeast()
 	local targetMajorVersion=$1
 	local targetMinorVersion=$2
 
-	[ ${bashMajorVersion} -gt ${targetMajorVersion} -o ${bashMajorVersion} -eq ${targetMajorVersion} -a ${bashMinorVersion} -ge ${targetMinorVersion} ]
+	[ ${bashMajorVersion} -gt ${targetMajorVersion} -o ${bashMajorVersion} -eq ${targetMajorVersion} -a ${bashMinorVersion} -ge ${targetMinorVersion} ] \
+		|| ThrowException "BASH version must be at least ${targetMajorVersion}.${targetMinorVersion}"
 }
 
 function bash__SupportsVariableReferences()
 {
-	bash__VersionIsAtLeast 4 3
+	bash__VersionIsAtLeast 4 3 || ThrowException "Variable references not supported in this BASH version"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -73,7 +74,7 @@ function CatPathWinToUnix()
 	fi
 }
 
-function PathUnixToWin()
+function EchoPathUnixToWin()
 {
 	if [ ${OStype} = "cygwin" ] ; then
 		echo $1 | CatPathUnixToWin
@@ -82,7 +83,7 @@ function PathUnixToWin()
 	fi
 }
 
-function PathWinToUnix()
+function EchoPathWinToUnix()
 {
 	if [ ${OStype} = "cygwin" ] ; then
 		echo $1 | CatPathWinToUnix
