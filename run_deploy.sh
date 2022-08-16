@@ -270,7 +270,8 @@ if [ "${gx_Action}" != "help" ] ; then
 		cd "${ScriptPath}"
 	fi
 
-	. "${CommonsPath}/repo.${DeployRepoTech}/init.sh"
+	DeployRepoTechPath="${CommonsPath}/repo.${DeployRepoTech}"
+	. "${DeployRepoTechPath}/init.sh"
 	cd "${ScriptPath}"
 fi
 
@@ -375,7 +376,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 			InfoMessage "        pre-phase"
 
-			DeployRepo_PrePhaseRun "${l_id_script}" "${l_id_script_execution}"
+			DeployRepo_PrePhase "${l_id_script}" "${l_id_script_execution}"
 
 			# ----------------------------------------------------------------------------------------------
 
@@ -393,7 +394,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 			InfoMessage "        post-phase"
 
-			DeployRepo_PostPhaseRun "${l_id_script}" "${l_id_script_execution}" "${l_script_return_code}"
+			DeployRepo_PostPhase "${l_id_script}" "${l_id_script_execution}" "${l_script_return_code}"
 
 			# ----------------------------------------------------------------------------------------------
 

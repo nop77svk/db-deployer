@@ -6,15 +6,11 @@ set -o nounset
 set -o pipefail
 [ -n "${DEBUG:-}" ] && set -x # xtrace
 
-g_deploy_repo_tech_path="${CommonsPath}/repo.oracle-sqlplus"
-cd "${g_deploy_repo_tech_path}/repo_ddl"
+cd "${DeployRepoTechPath}/repo_ddl"
 
-if [ "${DeployRepoTech}" = "oracle-sqlplus" ] ; then
-	tech-oracle-sqlplus-get_connect_string g_OracleSqlPlus_repoDbConnect deploy_repo
-	tech-oracle-sqlplus-get_connect_string l_OracleSqlPlus_repoDbConnectObfuscated deploy_repo obfuscate-password
-
-	InfoMessage "    deployment repository connection = \"${l_OracleSqlPlus_repoDbConnectObfuscated}\""
-fi
+tech-oracle-sqlplus-get_connect_string g_OracleSqlPlus_repoDbConnect deploy_repo
+tech-oracle-sqlplus-get_connect_string l_OracleSqlPlus_repoDbConnectObfuscated deploy_repo obfuscate-password
+InfoMessage "    deployment repository connection = \"${l_OracleSqlPlus_repoDbConnectObfuscated}\""
 
 echo "define deploy_cfg_app_id = '${cfg_app_id}'" >> "_deploy_repo_defines.${RndToken}.tmp"
 
@@ -156,7 +152,7 @@ function DeployRepo_PostPhase()
 		| gzip -9cn \
 		| base64 \
 		| ${local_gawk} \
-			-f "${CommonsPath}/repo.oracle-sqlplus/gzip_base64_to_sqlplus.awk" \
+			-f "${DeployRepoTechPath}/gzip_base64_to_sqlplus.awk" \
 			-v 'outputClobVarName=l_script_spool' \
 		>> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
@@ -164,7 +160,7 @@ function DeployRepo_PostPhase()
 		| gzip -9cn \
 		| base64 \
 		| ${local_gawk} \
-			-f "${CommonsPath}/repo.oracle-sqlplus/gzip_base64_to_sqlplus.awk" \
+			-f "${DeployRepoTechPath}/gzip_base64_to_sqlplus.awk" \
 			-v 'outputClobVarName=l_script_stderr' \
 		>> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
@@ -287,7 +283,7 @@ function DeployRepo_MergeIncrements()
 	EOF
 	
 	cat "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp" \
-		| ${local_gawk} -f "${CommonsPath}/repo.oracle-sqlplus/full_script_list_to_sql_inserts.awk" \
+		| ${local_gawk} -f "${DeployRepoTechPath}/full_script_list_to_sql_inserts.awk" \
 		>> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 	cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
@@ -298,7 +294,7 @@ function DeployRepo_MergeIncrements()
 		prompt --- now about to synchronize the repository
 	EOF
 	
-	echo '@"'$( PathUnixToWin "${CommonsPath}/repo.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
+	echo '@"'$( PathUnixToWin "${DeployRepoTechPath}/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 	cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
 		prompt --- DONE synchronizing the repository
@@ -353,7 +349,7 @@ function DeployRepo_GetListToExecute()
 	EOF
 	
 	echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.tmp" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
-	echo '@"'$( PathUnixToWin "${CommonsPath}/repo.oracle-sqlplus/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
+	echo '@"'$( PathUnixToWin "${DeployRepoTechPath}/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
 	
 	cat >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" <<-EOF
 	
@@ -396,9 +392,9 @@ function DeployRepo_CreateRun()
 	
 	echo 'prompt --- calling set_up_deployment_run.sql' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	if [ "${x_deploy_action}" = "sync" ] ; then
-		echo '@"'$( PathUnixToWin "${CommonsPath}/repo.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+		echo '@"'$( PathUnixToWin "${DeployRepoTechPath}/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	else
-		echo '@"'$( PathUnixToWin "${CommonsPath}/repo.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+		echo '@"'$( PathUnixToWin "${DeployRepoTechPath}/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	fi
 	echo '' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	
