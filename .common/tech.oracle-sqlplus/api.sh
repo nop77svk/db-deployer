@@ -13,11 +13,11 @@ case "${x_action}" in
 		x_id_script="$2"
 		x_id_script_execution="$3"
 
-		x_schema_id="$4"
+		x_target_id="$4"
 		x_script_folder="$5"
 		x_script_file="$6"
 
-		Tech_OracleSqlPlus_GetConnectString l_connect "${x_schema_id}"
+		Tech_OracleSqlPlus_GetConnectString l_connect "${x_target_id}"
 		
 		# determine the "defines" flag
 		l_script_file_ext=${x_script_file##*.}

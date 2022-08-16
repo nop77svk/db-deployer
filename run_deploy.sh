@@ -354,12 +354,12 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 	IFS='|'
 	cat "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.tmp" \
 		| tr '\r' '\n' \
-		| while read -r l_id_script_execution l_num_order l_id_script l_id_increment l_schema_id l_script_folder l_script_file l_add_info || break
+		| while read -r l_id_script_execution l_num_order l_id_script l_id_increment l_target_id l_script_folder l_script_file l_add_info || break
 	do
 		[ -z "${l_id_script_execution}" ] && continue
-		InfoMessage "    script \"${l_script_folder}/${l_script_file}\" (ID \"${l_id_script}\", exec \"${l_id_script_execution}\") in schema \"${l_schema_id}\""
+		InfoMessage "    script \"${l_script_folder}/${l_script_file}\" (ID \"${l_id_script}\", exec \"${l_id_script_execution}\") in schema \"${l_target_id}\""
 
-		if ( echo ",${cfg_target_no_run:-}," | ${local_grep} -q ",${l_schema_id}," ) ; then
+		if ( echo ",${cfg_target_no_run:-}," | ${local_grep} -q ",${l_target_id}," ) ; then
 			l_is_fake_exec=yes
 		else if [ "${gx_Action}" = "sync" ] ; then
 			l_is_fake_exec=yes
@@ -371,7 +371,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 		# 2do! pass the l_add_info to both repository and technology APIs?
 		if [ "${l_is_fake_exec}" = "no" ] ; then
-			l_script_tech_var=dpltgt_${l_schema_id}_tech
+			l_script_tech_var=dpltgt_${l_target_id}_tech
 			l_script_tech=${!l_script_tech_var:-oracle-sqlplus}
 
 			InfoMessage "        pre-phase"
@@ -385,7 +385,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 			. "${CommonsPath}/tech.${l_script_tech}/api.sh" \
 				run \
 				"${l_id_script}" "${l_id_script_execution}" \
-				"${l_schema_id}" \
+				"${l_target_id}" \
 				"${l_script_folder}" "${l_script_file}"
 
 			l_script_return_code=$?
