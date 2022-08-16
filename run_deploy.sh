@@ -34,8 +34,8 @@ DoLog  -------------------------------------------------------------------------
 
 . "${CommonsPath}/os_specific_utils.sh"
 
-ScriptPath=$( PathWinToUnix "${ScriptPath}" )
-Here=$( PathWinToUnix "${Here}" )
+ScriptPath=$( EchoPathWinToUnix "${ScriptPath}" )
+Here=$( EchoPathWinToUnix "${Here}" )
 
 # ------------------------------------------------------------------------------------------------
 
@@ -183,7 +183,7 @@ fi
 # ------------------------------------------------------------------------------------------------
 
 formerLogFolder="${g_LogFolder}"
-newLogFolder=$( PathWinToUnix "${cfg_log_folder:-${g_LogFolder:-${DeploySrcRoot:-${Here}}}}" )
+newLogFolder=$( EchoPathWinToUnix "${cfg_log_folder:-${g_LogFolder:-${DeploySrcRoot:-${Here}}}}" )
 
 if [ "x${formerLogFolder}" != "x${newLogFolder}" ] ; then
 	InfoMessage "    note: switching log output from \"${g_LogFolder}\" to \"${newLogFolder}\""
@@ -196,8 +196,8 @@ fi
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "Further configuring the deployer"
 
-	TmpPath=$( PathWinToUnix "${cfg_tmp_path:-${DeploySrcRoot}}" )
-	TmpPath=$( FolderAbsolutePath "${TmpPath}" )
+	TmpPath=$( EchoPathWinToUnix "${cfg_tmp_path:-${DeploySrcRoot}}" )
+	TmpPath=$( EchoFolderAbsolutePath "${TmpPath}" )
 	InfoMessage "    temporary files path = \"${TmpPath}\""
 
 	GlobalPluginsPath="${ScriptPath}/.plugin"

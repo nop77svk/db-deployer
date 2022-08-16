@@ -38,8 +38,8 @@ case "${x_action}" in
 			ln "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl"
 			"${SqlLoaderBinary}" \
 				userid="${l_connect}" \
-				control=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" ) \
-				log=$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" ) \
+				control=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" ) \
+				log=$( EchoPathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" ) \
 				2>&1 \
 				> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 				|| scriptReturnCode=$?
@@ -75,7 +75,7 @@ case "${x_action}" in
 
 			EOF
 
-			echo 'spool "'$( PathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			echo 'spool "'$( EchoPathUnixToWin "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.log" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 			cat >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -86,7 +86,7 @@ case "${x_action}" in
 
 			EOF
 
-			echo '@"'$( PathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			echo '@"'$( EchoPathUnixToWin "${gOracle_dbDefinesScriptFile}" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 			cat >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -97,7 +97,7 @@ case "${x_action}" in
 
 			EOF
 
-			echo '@"'$( PathUnixToWin "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+			echo '@"'$( EchoPathUnixToWin "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" )'"' >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
 			cat >> "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 
@@ -128,7 +128,7 @@ case "${x_action}" in
 
 			scriptReturnCode=0
 
-			l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
+			l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 			"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
 				2> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 				|| scriptReturnCode=$?
