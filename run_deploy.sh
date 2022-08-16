@@ -214,7 +214,7 @@ if [ "${gx_Action}" != "help" ] ; then
 
 	InfoMessage "    symbolic environment id = \"${cfg_environment:=}\""
 
-	DeployRepoTech="${dpltgt_deploy_repo_tech:-oracle-sqlplus}"
+	DeployRepoTech="${deploy_repo_tech:-oracle-sqlplus}"
 	InfoMessage "    deployment repository technology = \"${DeployRepoTech}\""
 
 	InfoMessage "    application identifier = \"${cfg_app_id:-}\""
@@ -274,7 +274,7 @@ fi
 
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "Initializing deployment repository (${DeployRepoTech})"
-	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" initialize
+	. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" initialize
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -325,7 +325,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" -o "${gx_Action}" = "syn
 	InfoMessage "    Merging the list of found script files to (unfinished increments in) deployment repository"
 
 	cd "${TmpPath}"
-	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
+	. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" \
 		merge-inc
 fi
 
@@ -335,7 +335,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" -o "${gx_Action}" = "syn
 	InfoMessage "    Setting up a deployment run"
 
 	cd "${DeploySrcRoot}"
-	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
+	. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" \
 		create-run \
 		"${gx_Action}"
 fi
@@ -346,7 +346,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" -o "${gx_Action}" = "del
 	InfoMessage "    Fetching the ultimate list of scripts to run from repository"
 
 	cd "${DeploySrcRoot}"
-	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
+	. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" \
 		get-list-to-exec
 fi
 
@@ -381,7 +381,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 			InfoMessage "        pre-phase"
 
-			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
+			. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" \
 				pre-phase-run \
 				"${l_id_script}" "${l_id_script_execution}"
 
@@ -401,7 +401,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 			InfoMessage "        post-phase"
 
-			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
+			. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" \
 				post-phase-run \
 				"${l_id_script}" "${l_id_script_execution}" \
 				"${l_script_return_code}"
@@ -414,14 +414,14 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 			[ -z "${DEBUG:-}" ] || true && (
 				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
-				. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
 			)
 
 		# ----------------------------------------------------------------------------------------------
 		else
 			InfoMessage "        fake execution for deployment repository synchronization"
 
-			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" fake-exec "${l_id_script}" "${l_id_script_execution}"
+			. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" fake-exec "${l_id_script}" "${l_id_script_execution}"
 			l_script_return_code=$?
 		fi
 	done
