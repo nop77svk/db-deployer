@@ -100,12 +100,12 @@ InfoMessage "    target environment = \"${gx_Env}\""
 # ------------------------------------------------------------------------------------------------
 
 if [ -n "${gx_Env}" ] ; then
-	InfoMessage "Seeking for deployment sources root"
+	InfoMessage "Configuring the deployer"
 	EnvPath=
 	DeploySrcRoot=
 
 	cd "${Here}"
-	InfoMessage "    starting from \"${Here}\""
+	InfoMessage "    seeking for deployment sources root in \"${Here}\""
 	while true ; do
 		thisLevel=$(pwd)
 		if [ "x${gx_Env}" = "xas-set" -a -f run_deploy.cfg ] ; then
@@ -147,13 +147,7 @@ if [ -n "${gx_Env}" ] ; then
 		ThrowException "Unable to determine deployment sources root"
 	fi
 
-	InfoMessage "    determined deployment sources root = \"${DeploySrcRoot}\""
-fi
-
-# ------------------------------------------------------------------------------------------------
-
-if [ -n "${gx_Env}" ] ; then
-	InfoMessage "Configuring the environment-specific deployment settings"
+	# ------------------------------------------------------------------------------------------------
 
 	case "x${gx_Env}" in
 		"xas-set" )
@@ -227,30 +221,24 @@ fi
 # ------------------------------------------------------------------------------------------------
 
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Prechecks"
+	InfoMessage "Preparing the temporary locations"
 
 	touch "${TmpPath}/touch.${RndToken}.tmp" || ThrowException "Temporary files folder not writable"
 	rm "${TmpPath}/touch.${RndToken}.tmp"
-fi
-
-# ------------------------------------------------------------------------------------------------
-
-if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Cleaning up the temporary folder"
 
 	cd "${TmpPath}"
-	rm ${gx_Env}.*.tmp 2> /dev/null || InfoMessage '    Note: No TMP files to clean up'
-	rm ${gx_Env}.*.sql 2> /dev/null || InfoMessage '    Note: No SQL files to clean up'
-	rm ${gx_Env}.*.stderr.out 2> /dev/null || InfoMessage '    Note: No STDERR.OUT files to clean up'
-	rm ${gx_Env}.*.tbz2 2> /dev/null || InfoMessage '    Note: No TBZ2 files to clean up'
-	[ -z "${DEBUG:-}" ] && rm ${gx_Env}.*.log 2> /dev/null || InfoMessage '    Note: No LOG files to clean up'
+	rm ${gx_Env}.*.tmp 2> /dev/null || true
+	rm ${gx_Env}.*.sql 2> /dev/null || true
+	rm ${gx_Env}.*.stderr.out 2> /dev/null || true
+	rm ${gx_Env}.*.tbz2 2> /dev/null || true
+	[ -z "${DEBUG:-}" ] && rm ${gx_Env}.*.log 2> /dev/null || true
 fi
 
 # ------------------------------------------------------------------------------------------------
 
 declare -A g_techs_loaded
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Initializing/loading deployment technologies"
+	InfoMessage "Initializing deployment technologies"
 
 	set \
 		| ${local_grep} -Ei '^dpltgt_.*_tech\s*=' \
@@ -275,7 +263,7 @@ fi
 # ================================================================================================
 
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Initializing deployment repository (${DeployRepoTech})"
+	InfoMessage "Initializing repository technology (${DeployRepoTech})"
 	if [ ! ${g_techs_loaded["${DeployRepoTech}"]} ] ; then
 		. "${CommonsPath}/tech.${DeployRepoTech}/technology.sh" initialize
 		g_techs_loaded["${DeployRepoTech}"]=yes

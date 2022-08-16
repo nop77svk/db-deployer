@@ -27,8 +27,6 @@ InfoMessage "    set up API"
 
 # ------------------------------------------------------------------------------------------------
 
-InfoMessage "        pre-phase run"
-
 function DeployRepo_PrePhaseRun()
 {
 	x_id_script="$1"
@@ -93,8 +91,6 @@ function DeployRepo_PrePhaseRun()
 
 # ------------------------------------------------------------------------------------------------
 
-InfoMessage "        pre-phase cleanup"
-
 function DeployRepo_PrePhaseCleanup()
 {
 	x_id_script="$1"
@@ -105,8 +101,6 @@ function DeployRepo_PrePhaseCleanup()
 }
 
 # ------------------------------------------------------------------------------------------------
-
-InfoMessage "        post-phase run"
 
 function DeployRepo_PostPhaseRun()
 {
@@ -195,8 +189,6 @@ function DeployRepo_PostPhaseRun()
 
 # ------------------------------------------------------------------------------------------------
 
-InfoMessage "        post-phase cleanup"
-
 function DeployRepo_PostPhaseCleanup()
 {
 	x_id_script="$1"
@@ -207,8 +199,6 @@ function DeployRepo_PostPhaseCleanup()
 }
 
 # ------------------------------------------------------------------------------------------------
-
-InfoMessage "        fake execution"
 
 function DeployRepo_FakeExec()
 {
@@ -279,8 +269,6 @@ function DeployRepo_FakeExec()
 
 # ------------------------------------------------------------------------------------------------
 
-InfoMessage "        merge increments"
-
 function DeployRepo_MergeIncrements()
 {
 	cat > "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
@@ -349,8 +337,6 @@ function DeployRepo_MergeIncrements()
 
 # ------------------------------------------------------------------------------------------------
 
-InfoMessage "        get list to execute"
-
 function DeployRepo_GetListToExecute()
 {
 	cat > "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" <<-EOF
@@ -396,8 +382,6 @@ function DeployRepo_GetListToExecute()
 }
 
 # ------------------------------------------------------------------------------------------------
-
-InfoMessage "        create run"
 
 function DeployRepo_CreateRun()
 {
@@ -454,8 +438,6 @@ function DeployRepo_CreateRun()
 
 # ------------------------------------------------------------------------------------------------
 
-InfoMessage "        teardown"
-
 function DeployRepo_CleanUp()
 {
 	true
@@ -464,7 +446,7 @@ function DeployRepo_CleanUp()
 # ------------------------------------------------------------------------------------------------
 
 [ -z "${DEBUG:-}" ] || true && (
-	InfoMessage "    cleanup"
+	InfoMessage "    done"
 	rm -f "_deploy_repository.${RndToken}.log"
 	rm -f "_deploy_repository.upgrade_script.${RndToken}.tmp"
 	rm -f "${g_LogFolder}/${gx_Env}._deploy_repository.${RndToken}.err"
