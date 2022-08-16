@@ -248,7 +248,7 @@ fi
 
 # ------------------------------------------------------------------------------------------------
 
-declare -a g_techs_loaded
+declare -A g_techs_loaded
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "Initializing/loading deployment technologies"
 
@@ -260,7 +260,7 @@ if [ "${gx_Action}" != "help" ] ; then
 			{
 				print "InfoMessage \"    " $0 "\"";
 				print ". \"${CommonsPath}/tech." $0 "/technology.sh\" initialize";
-				print "g_techs_loaded[\"$0\"]=''$0''";
+				print "g_techs_loaded[''" $0 "'']=''yes''";
 			}' \
 		> "${TmpPath}/${gx_Env}.prepare_technologies.${RndToken}.tmp" \
 		|| ThrowException "No(?) deployment technologies defined for target \"${gx_Env}\""
@@ -276,8 +276,14 @@ fi
 
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "Initializing deployment repository (${DeployRepoTech})"
+	if [ ! ${g_techs_loaded["${DeployRepoTech}"]} ] ; then
+		. "${CommonsPath}/tech.${DeployRepoTech}/technology.sh" initialize
+		g_techs_loaded["${DeployRepoTech}"]=yes
+	fi
+
 	. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" initialize
 fi
+ThrowException "--- checkpoint ---"
 
 # ------------------------------------------------------------------------------------------------
 
