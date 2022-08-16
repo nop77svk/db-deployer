@@ -248,8 +248,9 @@ fi
 
 # ------------------------------------------------------------------------------------------------
 
+declare -a g_techs_loaded
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Preparing deployment technologies"
+	InfoMessage "Initializing/loading deployment technologies"
 
 	set \
 		| ${local_grep} -Ei '^dpltgt_.*_tech\s*=' \
@@ -259,6 +260,7 @@ if [ "${gx_Action}" != "help" ] ; then
 			{
 				print "InfoMessage \"    " $0 "\"";
 				print ". \"${CommonsPath}/tech." $0 "/technology.sh\" initialize";
+				print "g_techs_loaded[\"$0\"]=''$0''";
 			}' \
 		> "${TmpPath}/${gx_Env}.prepare_technologies.${RndToken}.tmp" \
 		|| ThrowException "No(?) deployment technologies defined for target \"${gx_Env}\""
