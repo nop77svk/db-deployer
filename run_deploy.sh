@@ -100,12 +100,12 @@ InfoMessage "    target environment = \"${gx_Env}\""
 # ------------------------------------------------------------------------------------------------
 
 if [ -n "${gx_Env}" ] ; then
-	InfoMessage "Seeking for deployment sources root"
+	InfoMessage "Configuring the deployer"
 	EnvPath=
 	DeploySrcRoot=
 
 	cd "${Here}"
-	InfoMessage "    starting from \"${Here}\""
+	InfoMessage "    seeking for deployment sources root in \"${Here}\""
 	while true ; do
 		thisLevel=$(pwd)
 		if [ "x${gx_Env}" = "xas-set" -a -f run_deploy.cfg ] ; then
@@ -147,13 +147,7 @@ if [ -n "${gx_Env}" ] ; then
 		ThrowException "Unable to determine deployment sources root"
 	fi
 
-	InfoMessage "    determined deployment sources root = \"${DeploySrcRoot}\""
-fi
-
-# ------------------------------------------------------------------------------------------------
-
-if [ -n "${gx_Env}" ] ; then
-	InfoMessage "Configuring the environment-specific deployment settings"
+	# ------------------------------------------------------------------------------------------------
 
 	case "x${gx_Env}" in
 		"xas-set" )
@@ -214,7 +208,7 @@ if [ "${gx_Action}" != "help" ] ; then
 
 	InfoMessage "    symbolic environment id = \"${cfg_environment:=}\""
 
-	DeployRepoTech="${dpltgt_deploy_repo_tech:-oracle-sqlplus}"
+	DeployRepoTech="${deploy_repo_tech:-oracle-sqlplus}"
 	InfoMessage "    deployment repository technology = \"${DeployRepoTech}\""
 
 	InfoMessage "    application identifier = \"${cfg_app_id:-}\""
@@ -227,29 +221,24 @@ fi
 # ------------------------------------------------------------------------------------------------
 
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Prechecks"
+	InfoMessage "Preparing the temporary locations"
 
 	touch "${TmpPath}/touch.${RndToken}.tmp" || ThrowException "Temporary files folder not writable"
 	rm "${TmpPath}/touch.${RndToken}.tmp"
-fi
-
-# ------------------------------------------------------------------------------------------------
-
-if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Cleaning up the temporary folder"
 
 	cd "${TmpPath}"
-	rm ${gx_Env}.*.tmp 2> /dev/null || InfoMessage '    Note: No TMP files to clean up'
-	rm ${gx_Env}.*.sql 2> /dev/null || InfoMessage '    Note: No SQL files to clean up'
-	rm ${gx_Env}.*.stderr.out 2> /dev/null || InfoMessage '    Note: No STDERR.OUT files to clean up'
-	rm ${gx_Env}.*.tbz2 2> /dev/null || InfoMessage '    Note: No TBZ2 files to clean up'
-	[ -z "${DEBUG:-}" ] && rm ${gx_Env}.*.log 2> /dev/null || InfoMessage '    Note: No LOG files to clean up'
+	rm ${gx_Env}.*.tmp 2> /dev/null || true
+	rm ${gx_Env}.*.sql 2> /dev/null || true
+	rm ${gx_Env}.*.stderr.out 2> /dev/null || true
+	rm ${gx_Env}.*.tbz2 2> /dev/null || true
+	[ -z "${DEBUG:-}" ] && rm ${gx_Env}.*.log 2> /dev/null || true
 fi
 
 # ------------------------------------------------------------------------------------------------
 
+declare -A g_techs_loaded
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Preparing deployment technologies"
+	InfoMessage "Initializing deployment technologies"
 
 	set \
 		| ${local_grep} -Ei '^dpltgt_.*_tech\s*=' \
@@ -258,7 +247,8 @@ if [ "${gx_Action}" != "help" ] ; then
 		| ${local_gawk} '
 			{
 				print "InfoMessage \"    " $0 "\"";
-				print ". \"${CommonsPath}/tech." $0 "/technology.sh\" initialize";
+				print ". \"${CommonsPath}/tech." $0 "/init.sh\" initialize";
+				print "g_techs_loaded[''" $0 "'']=''yes''";
 			}' \
 		> "${TmpPath}/${gx_Env}.prepare_technologies.${RndToken}.tmp" \
 		|| ThrowException "No(?) deployment technologies defined for target \"${gx_Env}\""
@@ -273,32 +263,41 @@ fi
 # ================================================================================================
 
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Initializing deployment repository (${DeployRepoTech})"
-	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" initialize
+	InfoMessage "Initializing repository technology (${DeployRepoTech})"
+	if [ ! ${g_techs_loaded["${DeployRepoTech}"]} ] ; then
+		. "${CommonsPath}/tech.${DeployRepoTech}/init.sh"
+		g_techs_loaded["${DeployRepoTech}"]=yes
+		cd "${ScriptPath}"
+	fi
+
+	DeployRepoTechPath="${CommonsPath}/repo.${DeployRepoTech}"
+	. "${DeployRepoTechPath}/init.sh"
+	cd "${ScriptPath}"
 fi
 
 # ------------------------------------------------------------------------------------------------
 
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Executing pre-deployment plugins"
+	l_plugins_found=()
 
-	[ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] \
-		&& "${local_find}" "${GlobalPluginsPath}" -name 'pre-*.sh' \
-			| "${local_sort}" -t - -k 2 -n \
-			| while read -r preScriptfile
-		do
-			InfoMessage "    ${preScriptfile} (global)"
+	if [ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] ; then
+		while read -r preScriptfile ; do
+			l_plugins_found+=("${preScriptfile}")
+		done < <( "${local_find}" "${GlobalPluginsPath}" -name 'pre-*.sh' | "${local_sort}" -t - -k 2 -n )
+	fi
+
+	if [ -d "${LocalPluginsPath}" ] ; then
+		while read -r preScriptfile ; do
+			l_plugins_found+=("${preScriptfile}")
+		done < <( "${local_find}" "${LocalPluginsPath}" -name 'pre-*.sh' | "${local_sort}" -t - -k 2 -n )
+	fi
+	
+	if (( ${#l_plugins_found[@]} )) ; then
+		InfoMessage "Executing pre-deployment plugins"
+		for preScriptfile in "${l_plugins_found[@]}" ; do
 			( . "${preScriptfile}" )
 		done
-
-	[ -d "${LocalPluginsPath}" ] \
-		&& "${local_find}" "${LocalPluginsPath}" -name 'pre-*.sh' \
-			| "${local_sort}" -t - -k 2 -n \
-			| while read -r preScriptfile
-		do
-			InfoMessage "    ${preScriptfile}"
-			( . "${preScriptfile}" )
-		done
+	fi
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -325,8 +324,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" -o "${gx_Action}" = "syn
 	InfoMessage "    Merging the list of found script files to (unfinished increments in) deployment repository"
 
 	cd "${TmpPath}"
-	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
-		merge-inc
+	DeployRepo_MergeIncrements
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -335,9 +333,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" -o "${gx_Action}" = "syn
 	InfoMessage "    Setting up a deployment run"
 
 	cd "${DeploySrcRoot}"
-	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
-		create-run \
-		"${gx_Action}"
+	DeployRepo_CreateRun "${gx_Action}"
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -346,8 +342,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" -o "${gx_Action}" = "del
 	InfoMessage "    Fetching the ultimate list of scripts to run from repository"
 
 	cd "${DeploySrcRoot}"
-	. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
-		get-list-to-exec
+	DeployRepo_GetListToExecute
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -374,22 +369,20 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 		# ----------------------------------------------------------------------------------------------
 
-		# 2do! pass the l_add_info to both repository.sh and script_exec.sh
+		# 2do! pass the l_add_info to both repository and technology APIs?
 		if [ "${l_is_fake_exec}" = "no" ] ; then
 			l_script_tech_var=dpltgt_${l_schema_id}_tech
 			l_script_tech=${!l_script_tech_var:-oracle-sqlplus}
 
 			InfoMessage "        pre-phase"
 
-			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
-				pre-phase-run \
-				"${l_id_script}" "${l_id_script_execution}"
+			DeployRepo_PrePhase "${l_id_script}" "${l_id_script_execution}"
 
 			# ----------------------------------------------------------------------------------------------
 
 			InfoMessage "        execution"
 
-			. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" \
+			. "${CommonsPath}/tech.${l_script_tech}/api.sh" \
 				run \
 				"${l_id_script}" "${l_id_script_execution}" \
 				"${l_schema_id}" \
@@ -401,10 +394,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 			InfoMessage "        post-phase"
 
-			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" \
-				post-phase-run \
-				"${l_id_script}" "${l_id_script_execution}" \
-				"${l_script_return_code}"
+			DeployRepo_PostPhase "${l_id_script}" "${l_id_script_execution}" "${l_script_return_code}"
 
 			# ----------------------------------------------------------------------------------------------
 
@@ -413,15 +403,15 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 			fi
 
 			[ -z "${DEBUG:-}" ] || true && (
-				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
-				. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/tech.${l_script_tech}/api.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
+				DeployRepo_CleanUp "${l_id_script}" "${l_id_script_execution}"
 			)
 
 		# ----------------------------------------------------------------------------------------------
 		else
 			InfoMessage "        fake execution for deployment repository synchronization"
 
-			. "${CommonsPath}/tech.${DeployRepoTech}/repository.sh" fake-exec "${l_id_script}" "${l_id_script_execution}"
+			DeployRepo_FakeExecution "${l_id_script}" "${l_id_script_execution}"
 			l_script_return_code=$?
 		fi
 	done
@@ -440,25 +430,26 @@ fi
 # ------------------------------------------------------------------------------------------------
 
 if [ "${gx_Action}" != "help" ] ; then
-	InfoMessage "Executing post-deployment plugins"
+	l_plugins_found=()
 
-	[ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] \
-		&& "${local_find}" "${GlobalPluginsPath}" -name 'post-*.sh' \
-			| "${local_sort}" -t - -k 2 -n \
-			| while read -r postScriptfile
-		do
-			InfoMessage "    ${postScriptfile} (global)"
-			( . "${postScriptfile}" )
-		done
+	if [ -d "${GlobalPluginsPath}" -a "${GlobalPluginsPath}" != "${LocalPluginsPath}" ] ; then
+		while read -r postScriptFile ; do
+			l_plugins_found+=("${postScriptFile}")
+		done < <( "${local_find}" "${GlobalPluginsPath}" -name 'post-*.sh' | "${local_sort}" -t - -k 2 -n )
+	fi
 
-	[ -d "${LocalPluginsPath}" ] \
-		&& "${local_find}" "${LocalPluginsPath}" -name 'post-*.sh' \
-			| "${local_sort}" -t - -k 2 -n \
-			| while read -r postScriptfile
-		do
-			InfoMessage "    ${postScriptfile}"
-			( . "${postScriptfile}" )
+	if [ -d "${LocalPluginsPath}" ] ; then
+		while read -r postScriptFile ; do
+			l_plugins_found+=("${postScriptFile}")
+		done < <( "${local_find}" "${LocalPluginsPath}" -name 'post-*.sh' | "${local_sort}" -t - -k 2 -n )
+	fi
+
+	if (( ${#l_plugins_found[@]} )) ; then
+		InfoMessage "Executing post-deployment plugins"
+		for postScriptFile in "${l_plugins_found[@]}" ; do
+			( . "${postScriptFile}" )
 		done
+	fi
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -557,22 +548,10 @@ fi
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "CleanUp"
 
-	set \
-		| ${local_grep} -Ei '^dpltgt_.*_tech\s*=' \
-		| ${local_sed} 's/^dpltgt_.*_tech\s*=\s*\(.*\)\s*$/\1/g' \
-		| ${local_sort} -u \
-		| ${local_gawk} '
-			{
-				print "InfoMessage \"    for " $0 "\"";
-				print ". \"${CommonsPath}/tech." $0 "/technology.sh\" teardown";
-			}' \
-		> "${TmpPath}/${gx_Env}.cleanup.${RndToken}.tmp"
-
-	. "${TmpPath}/${gx_Env}.cleanup.${RndToken}.tmp"
-
-	[ -z "${DEBUG:-}" ] || true && (
-		rm "${TmpPath}/${gx_Env}.cleanup.${RndToken}.tmp"
-	)
+	for l_tech_id in ${!g_techs_loaded[@]} ; do
+		InfoMessage "    for \"${l_tech_id}\" technology"
+		"${CommonsPath}/tech.${l_tech_id}/api.sh" teardown
+	done
 fi
 
 # ------------------------------------------------------------------------------------------------
