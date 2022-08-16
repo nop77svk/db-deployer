@@ -279,9 +279,11 @@ if [ "${gx_Action}" != "help" ] ; then
 	if [ ! ${g_techs_loaded["${DeployRepoTech}"]} ] ; then
 		. "${CommonsPath}/tech.${DeployRepoTech}/technology.sh" initialize
 		g_techs_loaded["${DeployRepoTech}"]=yes
+		cd "${ScriptPath}"
 	fi
 
 	. "${CommonsPath}/repo.${DeployRepoTech}/repository.sh" initialize
+	cd "${ScriptPath}"
 fi
 ThrowException "--- checkpoint ---"
 

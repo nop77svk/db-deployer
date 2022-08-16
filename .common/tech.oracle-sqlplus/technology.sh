@@ -87,13 +87,6 @@ case "$x_action" in
 			| ${local_sed} 's/^dpltgt_\(.*\)\s*=\s*\(.*\)\s*$/define \1 = \2/g' \
 			| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
 			>> "${gOracle_dbDefinesScriptFile}"
-
-		if [ "${DeployRepoTech}" = "oracle-sqlplus" ] ; then
-			tech-oracle-sqlplus-get_connect_string gOracle_repoDbConnect deploy_repo
-			tech-oracle-sqlplus-get_connect_string lOracle_repoDbConnectObfuscated deploy_repo obfuscate-password
-
-			InfoMessage "        deployment repository connection = \"${lOracle_repoDbConnectObfuscated}\""
-		fi
 		
 		InfoMessage "        done"
 		;;

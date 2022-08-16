@@ -10,19 +10,19 @@ x_action="$1"
 
 case "${x_action}" in
 	(initialize)
-		cd "${CommonsPath}/tech.oracle-sqlplus/repo_ddl"
+		cd "${CommonsPath}/repo.oracle-sqlplus/repo_ddl"
 
-		InfoMessage "    prepare"
-		set \
-			| ${local_grep} -Ei '^dpltgt_deploy_repo_' \
-			| ${local_sed} 's/^dpltgt_\(.*\)\s*=\s*\(.*\)\s*$/define \1 = "\2"/g' \
-			| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
-			>> "_deploy_repo_defines.${RndToken}.tmp"
+		if [ "${DeployRepoTech}" = "oracle-sqlplus" ] ; then
+			tech-oracle-sqlplus-get_connect_string g_OracleSqlPlus_repoDbConnect deploy_repo
+			tech-oracle-sqlplus-get_connect_string l_OracleSqlPlus_repoDbConnectObfuscated deploy_repo obfuscate-password
+
+			InfoMessage "    deployment repository connection = \"${l_OracleSqlPlus_repoDbConnectObfuscated}\""
+		fi
 
 		echo "define deploy_cfg_app_id = '${cfg_app_id}'" >> "_deploy_repo_defines.${RndToken}.tmp"
 
 		InfoMessage "    execute"
-		"${SqlPlusBinary}" -L -S "${gOracle_repoDbConnect}" @_deploy_repository.sql ${RndToken} \
+		"${SqlPlusBinary}" -L -S "${g_OracleSqlPlus_repoDbConnect}" @_deploy_repository.sql ${RndToken} \
 			|| ThrowException "SQL*Plus failed"
 			2> "${g_LogFolder}/${gx_Env}._deploy_repository.${RndToken}.err"
 			> "${g_LogFolder}/${gx_Env}._deploy_repository.${RndToken}.out"
@@ -49,7 +49,7 @@ case "${x_action}" in
 
 			-- phase: pre-phase
 
-			connect ${gOracle_repoDbConnect}
+			connect ${g_OracleSqlPlus_repoDbConnect}
 
 			set autoprint off
 			set autotrace off
@@ -160,7 +160,7 @@ case "${x_action}" in
 			| gzip -9cn \
 			| base64 \
 			| ${local_gawk} \
-				-f "${CommonsPath}/tech.oracle-sqlplus/gzip_base64_to_sqlplus.awk" \
+				-f "${CommonsPath}/repo.oracle-sqlplus/gzip_base64_to_sqlplus.awk" \
 				-v 'outputClobVarName=l_script_spool' \
 			>> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
@@ -168,7 +168,7 @@ case "${x_action}" in
 			| gzip -9cn \
 			| base64 \
 			| ${local_gawk} \
-				-f "${CommonsPath}/tech.oracle-sqlplus/gzip_base64_to_sqlplus.awk" \
+				-f "${CommonsPath}/repo.oracle-sqlplus/gzip_base64_to_sqlplus.awk" \
 				-v 'outputClobVarName=l_script_stderr' \
 			>> "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 
@@ -180,7 +180,7 @@ case "${x_action}" in
 		EOF
 
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
-		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${g_OracleSqlPlus_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 
 		return ${scriptReturnCode}
@@ -256,7 +256,7 @@ case "${x_action}" in
 		EOF
 
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
-		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${g_OracleSqlPlus_repoDbConnect} @"${l_sqlplus_script_file}" \
 			2> "${g_LogFolder}/${gx_Env}.script_exec_fake.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 			|| ThrowException "SQL*Plus execution exited with status of $?"
 
@@ -300,7 +300,7 @@ case "${x_action}" in
 		EOF
 	
 		cat "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp" \
-			| ${local_gawk} -f "${CommonsPath}/tech.oracle-sqlplus/full_script_list_to_sql_inserts.awk" \
+			| ${local_gawk} -f "${CommonsPath}/repo.oracle-sqlplus/full_script_list_to_sql_inserts.awk" \
 			>> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
@@ -311,7 +311,7 @@ case "${x_action}" in
 			prompt --- now about to synchronize the repository
 		EOF
 	
-		echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
+		echo '@"'$( PathUnixToWin "${CommonsPath}/repo.oracle-sqlplus/merge_increments_to_repo.sql" )'"' >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" <<-EOF
 			prompt --- DONE synchronizing the repository
@@ -323,7 +323,7 @@ case "${x_action}" in
 		EOF
 	
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.merge_increments_to_repo.${RndToken}.sql" )
-		"${SqlPlusBinary}" -L -S "${gOracle_repoDbConnect}" @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S "${g_OracleSqlPlus_repoDbConnect}" @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 	
 		[ -z "${DEBUG:-}" ] || true && (
@@ -363,7 +363,7 @@ case "${x_action}" in
 		EOF
 	
 		echo 'spool "'$( PathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.tmp" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
-		echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
+		echo '@"'$( PathUnixToWin "${CommonsPath}/repo.oracle-sqlplus/retrieve_the_deployment_setup.sql" )'"' >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql"
 	
 		cat >> "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" <<-EOF
 	
@@ -372,7 +372,7 @@ case "${x_action}" in
 		EOF
 	
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.retrieve_the_deployment_setup.${RndToken}.sql" )
-		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${g_OracleSqlPlus_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 		;;
 
@@ -403,9 +403,9 @@ case "${x_action}" in
 	
 		echo 'prompt --- calling set_up_deployment_run.sql' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		if [ "${x_deploy_action}" = "sync" ] ; then
-			echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+			echo '@"'$( PathUnixToWin "${CommonsPath}/repo.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" sync-only' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		else
-			echo '@"'$( PathUnixToWin "${CommonsPath}/tech.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
+			echo '@"'$( PathUnixToWin "${CommonsPath}/repo.oracle-sqlplus/prepare_or_sync_deployment_run.sql" )'" normal' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 		fi
 		echo '' >> "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql"
 	
@@ -419,7 +419,7 @@ case "${x_action}" in
 		EOF
 	
 		l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.set_up_deployment_run.${RndToken}.sql" )
-		"${SqlPlusBinary}" -L -S ${gOracle_repoDbConnect} @"${l_sqlplus_script_file}" \
+		"${SqlPlusBinary}" -L -S ${g_OracleSqlPlus_repoDbConnect} @"${l_sqlplus_script_file}" \
 			|| ThrowException "SQL*Plus failed"
 	
 		[ -z "${DEBUG:-}" ] || true && (
