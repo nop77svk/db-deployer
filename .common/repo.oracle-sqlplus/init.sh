@@ -6,7 +6,8 @@ set -o nounset
 set -o pipefail
 [ -n "${DEBUG:-}" ] && set -x # xtrace
 
-cd "${CommonsPath}/repo.oracle-sqlplus/repo_ddl"
+g_deploy_repo_tech_path="${CommonsPath}/repo.oracle-sqlplus"
+cd "${g_deploy_repo_tech_path}/repo_ddl"
 
 if [ "${DeployRepoTech}" = "oracle-sqlplus" ] ; then
 	tech-oracle-sqlplus-get_connect_string g_OracleSqlPlus_repoDbConnect deploy_repo
@@ -27,7 +28,7 @@ InfoMessage "    set up API"
 
 # ------------------------------------------------------------------------------------------------
 
-function DeployRepo_PrePhaseRun()
+function DeployRepo_PrePhase()
 {
 	x_id_script="$1"
 	x_id_script_execution="$2"
@@ -86,23 +87,15 @@ function DeployRepo_PrePhaseRun()
 		2> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 		|| scriptReturnCode=$?
 
+	rm "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+	rm "${g_LogFolder}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log"
+
 	return ${scriptReturnCode}
 }
 
 # ------------------------------------------------------------------------------------------------
 
-function DeployRepo_PrePhaseCleanup()
-{
-	x_id_script="$1"
-	x_id_script_execution="$2"
-
-	rm "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
-	rm "${g_LogFolder}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log"
-}
-
-# ------------------------------------------------------------------------------------------------
-
-function DeployRepo_PostPhaseRun()
+function DeployRepo_PostPhase()
 {
 	x_id_script="$1"
 	x_id_script_execution="$2"
@@ -185,14 +178,6 @@ function DeployRepo_PostPhaseRun()
 	l_sqlplus_script_file=$( PathUnixToWin "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
 	"${SqlPlusBinary}" -L -S ${g_OracleSqlPlus_repoDbConnect} @"${l_sqlplus_script_file}" \
 		|| ThrowException "SQL*Plus failed"
-}
-
-# ------------------------------------------------------------------------------------------------
-
-function DeployRepo_PostPhaseCleanup()
-{
-	x_id_script="$1"
-	x_id_script_execution="$2"
 
 	rm "${TmpPath}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
 	rm "${g_LogFolder}/${gx_Env}.script_exec_finish.${x_id_script}-${x_id_script_execution}.${RndToken}.log"
