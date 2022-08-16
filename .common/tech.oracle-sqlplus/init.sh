@@ -15,16 +15,16 @@ fi
 export ORACLE_HOME="${ORACLE_HOME:-${cfg_oracle_home}}"
 
 if [ ${OStype} = "cygwin" ] ; then
-	export ORACLE_HOME=$( PathUnixToWin "${ORACLE_HOME}" )
+	export ORACLE_HOME=$( EchoPathUnixToWin "${ORACLE_HOME}" )
 fi
 
 InfoMessage "        Oracle home in use = \"${ORACLE_HOME}\""
 
-export SqlPlusBinary=$( PathWinToUnix "${ORACLE_HOME}" )/bin/sqlplus
+export SqlPlusBinary=$( EchoPathWinToUnix "${ORACLE_HOME}" )/bin/sqlplus
 InfoMessage "        SQL*Plus binary = \"${SqlPlusBinary}\""
 [ -f "${SqlPlusBinary}" -o -f "${SqlPlusBinary}.exe" ] || ThrowException "SQL*Plus binary not accessible"
 
-export SqlLoaderBinary=$( PathWinToUnix "${ORACLE_HOME}" )/bin/sqlldr
+export SqlLoaderBinary=$( EchoPathWinToUnix "${ORACLE_HOME}" )/bin/sqlldr
 InfoMessage "        SQL*Loader binary = \"${SqlLoaderBinary}\""
 [ -f "${SqlLoaderBinary}" -o -f "${SqlLoaderBinary}.exe" ] || InfoMessage "            Warning: SQL*Loader binary not accessible!"
 
