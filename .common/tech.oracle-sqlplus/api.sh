@@ -7,16 +7,17 @@ set -o pipefail
 [ -n "${DEBUG:-}" ] && set -x # xtrace
 
 x_action="$1"
-x_id_script="$2"
-x_id_script_execution="$3"
 
 case "${x_action}" in
 	(run)
+		x_id_script="$2"
+		x_id_script_execution="$3"
+
 		x_schema_id="$4"
 		x_script_folder="$5"
 		x_script_file="$6"
 
-		tech-oracle-sqlplus-get_connect_string l_connect "${x_schema_id}"
+		Tech_OracleSqlPlus_GetConnectString l_connect "${x_schema_id}"
 		
 		# determine the "defines" flag
 		l_script_file_ext=${x_script_file##*.}
@@ -146,9 +147,16 @@ case "${x_action}" in
 		;;
 
 	(cleanup)
+		x_id_script="$2"
+		x_id_script_execution="$3"
+
 		rm "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
 		rm -f "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" 2> /dev/null
 		rm -f "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl" 2> /dev/null
+		;;
+
+	(teardown)
+		rm "${gOracle_dbDefinesScriptFile}"
 		;;
 
 	(*)

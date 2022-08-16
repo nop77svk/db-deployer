@@ -8,8 +8,8 @@ set -o pipefail
 
 cd "${DeployRepoTechPath}/repo_ddl"
 
-tech-oracle-sqlplus-get_connect_string g_OracleSqlPlus_repoDbConnect deploy_repo
-tech-oracle-sqlplus-get_connect_string l_OracleSqlPlus_repoDbConnectObfuscated deploy_repo obfuscate-password
+Tech_OracleSqlPlus_GetConnectString g_OracleSqlPlus_repoDbConnect deploy_repo
+Tech_OracleSqlPlus_GetConnectString l_OracleSqlPlus_repoDbConnectObfuscated deploy_repo obfuscate-password
 InfoMessage "    deployment repository connection = \"${l_OracleSqlPlus_repoDbConnectObfuscated}\""
 
 echo "define deploy_cfg_app_id = '${cfg_app_id}'" >> "_deploy_repo_defines.${RndToken}.tmp"

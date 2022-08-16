@@ -247,7 +247,7 @@ if [ "${gx_Action}" != "help" ] ; then
 		| ${local_gawk} '
 			{
 				print "InfoMessage \"    " $0 "\"";
-				print ". \"${CommonsPath}/tech." $0 "/technology.sh\" initialize";
+				print ". \"${CommonsPath}/tech." $0 "/init.sh\" initialize";
 				print "g_techs_loaded[''" $0 "'']=''yes''";
 			}' \
 		> "${TmpPath}/${gx_Env}.prepare_technologies.${RndToken}.tmp" \
@@ -265,7 +265,7 @@ fi
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "Initializing repository technology (${DeployRepoTech})"
 	if [ ! ${g_techs_loaded["${DeployRepoTech}"]} ] ; then
-		. "${CommonsPath}/tech.${DeployRepoTech}/technology.sh" initialize
+		. "${CommonsPath}/tech.${DeployRepoTech}/init.sh"
 		g_techs_loaded["${DeployRepoTech}"]=yes
 		cd "${ScriptPath}"
 	fi
@@ -369,7 +369,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 		# ----------------------------------------------------------------------------------------------
 
-		# 2do! pass the l_add_info to both repository APIs and script_exec.sh
+		# 2do! pass the l_add_info to both repository and technology APIs?
 		if [ "${l_is_fake_exec}" = "no" ] ; then
 			l_script_tech_var=dpltgt_${l_schema_id}_tech
 			l_script_tech=${!l_script_tech_var:-oracle-sqlplus}
@@ -382,7 +382,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 
 			InfoMessage "        execution"
 
-			. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" \
+			. "${CommonsPath}/tech.${l_script_tech}/api.sh" \
 				run \
 				"${l_id_script}" "${l_id_script_execution}" \
 				"${l_schema_id}" \
@@ -403,7 +403,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" ] ; then
 			fi
 
 			[ -z "${DEBUG:-}" ] || true && (
-				. "${CommonsPath}/tech.${l_script_tech}/script_exec.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
+				. "${CommonsPath}/tech.${l_script_tech}/api.sh" cleanup "${l_id_script}" "${l_id_script_execution}"
 				DeployRepo_CleanUp "${l_id_script}" "${l_id_script_execution}"
 			)
 
@@ -550,7 +550,7 @@ if [ "${gx_Action}" != "help" ] ; then
 
 	for l_tech_id in ${!g_techs_loaded[@]} ; do
 		InfoMessage "    for \"${l_tech_id}\" technology"
-		"${CommonsPath}/tech.${l_tech_id}/technology.sh" teardown
+		"${CommonsPath}/tech.${l_tech_id}/api.sh" teardown
 	done
 fi
 
