@@ -43,7 +43,7 @@ if [ ${OStype} = "SunOS" ] ; then
 	local_grep=/usr/xpg4/bin/grep
 	local_sed=/usr/xpg4/bin/sed
 	local_sort=/usr/xpg4/bin/sort
-else if [ ${OStype} = "cygwin" -o ${OStpe} = "mingw" -o ${OStype} = "linux" ] ; then
+else if [ ${OStype} = "cygwin" -o ${OStype} = "mingw" -o ${OStype} = "linux" ] ; then
 	local_find=/bin/find
 	local_gawk=/bin/gawk
 	local_grep=/bin/grep
