@@ -74,7 +74,8 @@ function Tech_OracleSqlPlus_GetConnectString()
 	local l_db_db=${!l_db_db_var} || ThrowException "Config variable \"${l_db_db_var}\" not set"
 	local l_db_as_sysdba=${!l_db_as_sysdba:-no}
 
-	local l_db_password=${!l_db_password_var:-}
+	local l_db_password=${!l_db_password_var} || local l_db_password=
+
 	if [ -z "${l_db_password}" ] ; then
 		if [ "${l_db_as_sysdba}" = "yes" ] ; then
 			local l_password_prompt="${l_db_user}@${l_db_db} as sysdba"
@@ -85,12 +86,14 @@ function Tech_OracleSqlPlus_GetConnectString()
 		fi ; fi
 
 		if [ "${x_target_id}" = "!deploy_repo!" ] ; then
-			echo -n "    Enter password for ${l_password_prompt} (deployment repository): "
+			local l_password_prompt="    Enter password for ${l_password_prompt} (deployment repository): "
 		else
-			echo -n "    Enter password for ${l_password_prompt} (target ${x_target_id}): "
+			local l_password_prompt="            Enter password for ${l_password_prompt} (target ${x_target_id}): "
 		fi
-		read -r l_db_password
+
+		read -s -r -p "${l_password_prompt}" l_db_password < /dev/tty > /dev/tty
 		export ${l_db_password_var}=${l_db_password}
+		echo ''
 	fi
 
 	if [ -z "${l_db_password}" ] ; then
