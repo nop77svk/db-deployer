@@ -95,6 +95,7 @@ function DeployRepo_PrePhase()
 		|| scriptReturnCode=$?
 
 	rm "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"
+	rm "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out"
 	rm "${g_LogFolder}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.log"
 
 	return ${scriptReturnCode}
