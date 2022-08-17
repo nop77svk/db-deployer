@@ -35,7 +35,7 @@ SqlLoaderBinary="${l_oracle_bin_path}/sqlldr"
 InfoMessage "        SQL*Loader binary = \"${SqlLoaderBinary}\""
 [ -f "${SqlLoaderBinary}" ] || InfoMessage "            Warning: SQL*Loader binary not accessible"
 
-gOracle_dbDefinesScriptFile="${TmpPath}/${gx_Env}.deployment_db_defines.${RndToken}.tmp"
+export gOracle_dbDefinesScriptFile="${TmpPath}/${gx_Env}.deployment_db_defines.${RndToken}.tmp"
 InfoMessage "        SQL*Plus defines file = \"${gOracle_dbDefinesScriptFile}\""
 
 # ----------------------------------------------------------------------------------------------
@@ -77,11 +77,11 @@ function Tech_OracleSqlPlus_GetConnectString()
 	local l_db_password=${!l_db_password_var:-}
 	if [ -z "${l_db_password}" ] ; then
 		if [ "${l_db_as_sysdba}" = "yes" ] ; then
-			local l_password_prompt="${l_db_user}/${l_db_password}@${l_db_db} as sysdba"
+			local l_password_prompt="${l_db_user}@${l_db_db} as sysdba"
 		else if [ -n "${l_db_proxy:-}" ] ; then
-			local l_password_prompt="${l_db_proxy}[${l_db_user}]/${l_db_password}@${l_db_db}"
+			local l_password_prompt="${l_db_proxy}[${l_db_user}]@${l_db_db}"
 		else
-			local l_password_prompt="${l_db_user}/${l_db_password}@${l_db_db}"
+			local l_password_prompt="${l_db_user}@${l_db_db}"
 		fi ; fi
 
 		if [ "${x_target_id}" = "!deploy_repo!" ] ; then

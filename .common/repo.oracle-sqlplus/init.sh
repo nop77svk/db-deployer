@@ -14,7 +14,7 @@ InfoMessage "    deployment repository connection = \"${l_OracleSqlPlus_repoDbCo
 
 # ------------------------------------------------------------------------------------------------
 
-InfoMessage "    further configuring"
+InfoMessage "    preconfiguring repository installer"
 
 set \
 	| ${local_grep} -Ei '^deploy_repo_' \
@@ -47,8 +47,6 @@ function DeployRepo_PrePhase()
 		whenever oserror exit 2 rollback
 
 		-- phase: pre-phase
-
-		connect ${g_OracleSqlPlus_repoDbConnect}
 
 		set autoprint off
 		set autotrace off
@@ -92,8 +90,8 @@ function DeployRepo_PrePhase()
 	scriptReturnCode=0
 
 	l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
-	"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
-		2> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
+	"${SqlPlusBinary}" -L -S "${g_OracleSqlPlus_repoDbConnect}" @"${l_sqlplus_script_file}" \
+		2> "${g_LogFolder}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 		|| scriptReturnCode=$?
 
 	rm "${TmpPath}/${gx_Env}.script_exec_start.${x_id_script}-${x_id_script_execution}.${RndToken}.sql"

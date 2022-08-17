@@ -18,9 +18,12 @@ case "${x_action}" in
 		x_script_file="$6"
 
 		Tech_OracleSqlPlus_GetConnectString l_connect "${x_target_id}"
+		DoLog "[DEBUG] l_connect = ${l_connect}"
 		
 		# determine the "defines" flag
 		l_script_file_ext=${x_script_file##*.}
+		DoLog "[DEBUG] l_script_file_ext = ${l_script_file_ext}"
+
 		case "${l_script_file_ext}" in
 			pkg|spc|bdy|pck|pks|pkb|typ|tps|tpb|trg|fnc|prc)
 				l_sqlplus_defines_flag=off
@@ -32,9 +35,12 @@ case "${x_action}" in
 				l_sqlplus_defines_flag=on
 				;;
 		esac
+		DoLog "[DEBUG] l_sqlplus_defines_flag = ${l_sqlplus_defines_flag}"
 
 		# execute the script
 		if [ "${l_script_file_ext}" = "ctl" ] ; then
+			DoLog "[TRACE] sqlloader"
+
 			ln "${DeploySrcRoot}/${x_script_folder}/${x_script_file}" "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.ctl"
 			"${SqlLoaderBinary}" \
 				userid="${l_connect}" \
@@ -45,13 +51,13 @@ case "${x_action}" in
 				|| scriptReturnCode=$?
 
 		else
+			DoLog "[TRACE] sqlplus"
+
 			cat > "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" <<-EOF
 				whenever sqlerror exit 1 rollback
 				whenever oserror exit 2 rollback
 
 				-- phase: execution
-
-				connect ${l_connect}
 
 				set autoprint off
 				set autotrace off
@@ -129,7 +135,9 @@ case "${x_action}" in
 			scriptReturnCode=0
 
 			l_sqlplus_script_file=$( EchoPathUnixToWin "${TmpPath}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.sql" )
-			"${SqlPlusBinary}" -L -S /nolog @"${l_sqlplus_script_file}" \
+			DoLog "[DEBUG] l_sqlplus_script_file = ${l_sqlplus_script_file}"
+
+			"${SqlPlusBinary}" -L -S "${l_connect}" @"${l_sqlplus_script_file}" \
 				2> "${g_LogFolder}/${gx_Env}.script_exec_exec.${x_id_script}-${x_id_script_execution}.${RndToken}.stderr.out" \
 				|| scriptReturnCode=$?
 
