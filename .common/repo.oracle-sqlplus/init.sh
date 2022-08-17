@@ -8,11 +8,24 @@ set -o pipefail
 
 cd "${DeployRepoTechPath}/repo_ddl"
 
-Tech_OracleSqlPlus_GetConnectString g_OracleSqlPlus_repoDbConnect deploy_repo
-Tech_OracleSqlPlus_GetConnectString l_OracleSqlPlus_repoDbConnectObfuscated deploy_repo obfuscate-password
+Tech_OracleSqlPlus_GetConnectString g_OracleSqlPlus_repoDbConnect !deploy_repo!
+Tech_OracleSqlPlus_GetConnectString l_OracleSqlPlus_repoDbConnectObfuscated !deploy_repo! obfuscate-password
 InfoMessage "    deployment repository connection = \"${l_OracleSqlPlus_repoDbConnectObfuscated}\""
 
+# ------------------------------------------------------------------------------------------------
+
+InfoMessage "    further configuring"
+
+set \
+	| ${local_grep} -Ei '^deploy_repo_' \
+	| ${local_grep} -Evi '^deploy_repo_password' \
+	| ${local_sed} 's/^\(.*\)\s*=\s*\(.*\)\s*$/define \1 = \2/g' \
+	| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
+	>> "_deploy_repo_defines.${RndToken}.tmp"
+
 echo "define deploy_cfg_app_id = '${cfg_app_id}'" >> "_deploy_repo_defines.${RndToken}.tmp"
+
+# ------------------------------------------------------------------------------------------------
 
 InfoMessage "    set up repository"
 "${SqlPlusBinary}" -L -S "${g_OracleSqlPlus_repoDbConnect}" @_deploy_repository.sql ${RndToken} \

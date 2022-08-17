@@ -20,15 +20,22 @@ fi
 
 InfoMessage "        Oracle home in use = \"${ORACLE_HOME}\""
 
-export SqlPlusBinary=$( EchoPathWinToUnix "${ORACLE_HOME}" )/bin/sqlplus
+l_oracle_bin_path=$( EchoPathWinToUnix "${ORACLE_HOME}" )
+if [ ! -f "${l_oracle_bin_path}/sqlplus" -a ! -f "${l_oracle_bin_path}/sqlplus.exe" ] ; then
+	l_oracle_bin_path = $( EchoPathWinToUnix "${ORACLE_HOME}" )/bin
+fi
+
+SqlPlusBinary="${l_oracle_bin_path}/sqlplus"
+[ -f "${SqlPlusBinary}.exe" ] && SqlPlusBinary="${SqlPlusBinary}.exe"
 InfoMessage "        SQL*Plus binary = \"${SqlPlusBinary}\""
-[ -f "${SqlPlusBinary}" -o -f "${SqlPlusBinary}.exe" ] || ThrowException "SQL*Plus binary not accessible"
+[ -f "${SqlPlusBinary}" ] || ThrowException "SQL*Plus binary not accessible"
 
-export SqlLoaderBinary=$( EchoPathWinToUnix "${ORACLE_HOME}" )/bin/sqlldr
+SqlLoaderBinary="${l_oracle_bin_path}/sqlldr"
+[ -f "${SqlLoaderBinary}.exe" ] && SqlLoaderBinary="${SqlLoaderBinary}.exe"
 InfoMessage "        SQL*Loader binary = \"${SqlLoaderBinary}\""
-[ -f "${SqlLoaderBinary}" -o -f "${SqlLoaderBinary}.exe" ] || InfoMessage "            Warning: SQL*Loader binary not accessible!"
+[ -f "${SqlLoaderBinary}" ] || InfoMessage "            Warning: SQL*Loader binary not accessible"
 
-export gOracle_dbDefinesScriptFile="${TmpPath}/${gx_Env}.deployment_db_defines.${RndToken}.tmp"
+gOracle_dbDefinesScriptFile="${TmpPath}/${gx_Env}.deployment_db_defines.${RndToken}.tmp"
 InfoMessage "        SQL*Plus defines file = \"${gOracle_dbDefinesScriptFile}\""
 
 # ----------------------------------------------------------------------------------------------
@@ -48,21 +55,53 @@ function Tech_OracleSqlPlus_GetConnectString()
 	local x_pass_flag="${3:-}"
 
 	# build the connection string
-	local l_db_user_var=dpltgt_${x_target_id}_user
-	local l_db_proxy_var=dpltgt_${x_target_id}_proxy
-	local l_db_password_var=dpltgt_${x_target_id}_password
-	local l_db_db_var=dpltgt_${x_target_id}_db
-	local l_db_as_sysdba=dpltgt_${x_target_id}_as_sysdba
-
+	if [ "${x_target_id}" = "!deploy_repo!" ] ; then
+		local l_db_user_var=deploy_repo_user
+		local l_db_proxy_var=deploy_repo_proxy
+		local l_db_password_var=deploy_repo_password
+		local l_db_db_var=deploy_repo_db
+		local l_db_as_sysdba=deploy_repo_as_sysdba
+	else
+		local l_db_user_var=dpltgt_${x_target_id}_user
+		local l_db_proxy_var=dpltgt_${x_target_id}_proxy
+		local l_db_password_var=dpltgt_${x_target_id}_password
+		local l_db_db_var=dpltgt_${x_target_id}_db
+		local l_db_as_sysdba=dpltgt_${x_target_id}_as_sysdba
+	fi
+	
 	local l_db_user=${!l_db_user_var} || ThrowException "Config variable \"${l_db_user_var}\" not set"
 	local l_db_proxy=${!l_db_proxy_var:=}
+	local l_db_db=${!l_db_db_var} || ThrowException "Config variable \"${l_db_db_var}\" not set"
+	local l_db_as_sysdba=${!l_db_as_sysdba:-no}
+
+	local l_db_password=${!l_db_password_var:-}
+	if [ -z "${l_db_password}" ] ; then
+		if [ "${l_db_as_sysdba}" = "yes" ] ; then
+			local l_password_prompt="${l_db_user}/${l_db_password}@${l_db_db} as sysdba"
+		else if [ -n "${l_db_proxy:-}" ] ; then
+			local l_password_prompt="${l_db_proxy}[${l_db_user}]/${l_db_password}@${l_db_db}"
+		else
+			local l_password_prompt="${l_db_user}/${l_db_password}@${l_db_db}"
+		fi ; fi
+
+		if [ "${x_target_id}" = "!deploy_repo!" ] ; then
+			echo -n "    Enter password for ${l_password_prompt} (deployment repository): "
+		else
+			echo -n "    Enter password for ${l_password_prompt} (target ${x_target_id}): "
+		fi
+		read -r l_db_password
+		export ${l_db_password_var}=${l_db_password}
+	fi
+
+	if [ -z "${l_db_password}" ] ; then
+		ThrowException "Config variable \"${l_db_password_var}\" not set"
+	fi
+
 	if [ "${x_pass_flag}" = "obfuscate-password" ] ; then
 		local l_db_password="******"
 	else
-		local l_db_password=${!l_db_password_var} || ThrowException "Config variable \"${l_db_password_var}\" not set"
+		local l_db_password=${!l_db_password_var}
 	fi
-	local l_db_db=${!l_db_db_var} || ThrowException "Config variable \"${l_db_db_var}\" not set"
-	local l_db_as_sysdba=${!l_db_as_sysdba:-no}
 
 	if [ "${l_db_as_sysdba}" = "yes" ] ; then
 		o_result="${l_db_user}/${l_db_password}@${l_db_db} as sysdba"
@@ -85,5 +124,5 @@ set \
 	| ${local_sed} 's/^dpltgt_\(.*\)\s*=\s*\(.*\)\s*$/define \1 = \2/g' \
 	| ${local_sed} "s/= '\(.*\)'$/= \1/g" \
 	>> "${gOracle_dbDefinesScriptFile}"
-		
+
 InfoMessage "        done"
