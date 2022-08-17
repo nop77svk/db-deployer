@@ -1,16 +1,19 @@
 #!/bin/bash
 
-if [ "${OS:-??}" = "Windows_NT" ] ; then
+l_uname="$(uname)"
+if [[ "${l_uname,,}" =~ ^cygwin ]] ; then
 	OStype=cygwin
-else if [[ $(uname) =~ ^[Cc][Yy][Gg][Ww][Ii][Nn] ]] ; then
-	OStype=cygwin
-else if [[ $(uname) =~ ^[Ll][Ii][Nn][Uu][Xx] ]] ; then
+else if [[ "${l_uname,,}" =~ ^linux ]] ; then
 	OStype=linux
-else if [ $(uname) = "SunOS" ] ; then
+else if [[ "${l_uname,,}" =~ ^msys_nt- ]] ; then
+	OStype=mingw
+else if [ "${l_uname}" = "SunOS" ] ; then
 	OStype=SunOS
+else if [ "${OS:-??}" = "Windows_NT" ] ; then
+	OStype=cygwin
 else
-	ThrowException "Unknown OS type! uname = "$(uname)", OS env var = ${OS:-}"
-fi ; fi ; fi ; fi
+	ThrowException "Unknown OS type! uname = \"$(uname)\", OS env var = \"${OS:-}\""
+fi ; fi ; fi ; fi ; fi
 
 # ------------------------------------------------------------------------------------------------
 
@@ -40,7 +43,7 @@ if [ ${OStype} = "SunOS" ] ; then
 	local_grep=/usr/xpg4/bin/grep
 	local_sed=/usr/xpg4/bin/sed
 	local_sort=/usr/xpg4/bin/sort
-else if [ ${OStype} = "cygwin" -o ${OStype} = "linux" ] ; then
+else if [ ${OStype} = "cygwin" -o ${OStpe} = "mingw" -o ${OStype} = "linux" ] ; then
 	local_find=/bin/find
 	local_gawk=/bin/gawk
 	local_grep=/bin/grep
@@ -60,23 +63,27 @@ function CatPathUnixToWin()
 {
 	if [ ${OStype} = "cygwin" ] ; then
 		${local_sed} 's/^\/cygdrive\/\([^\/]*\)/\1:/gi' | ${local_sed} 's/\//\\/g'
+	else if [ ${OStype} = "mingw" ] ; then
+		${local_sed} 's/^\/\([^\/]*\)/\1:/gi' | ${local_sed} 's/\//\\/g'
 	else
 		cat
-	fi
+	fi ; fi
 }
 
 function CatPathWinToUnix()
 {
 	if [ ${OStype} = "cygwin" ] ; then
 		${local_sed} 's/\\/\//g' | ${local_sed} 's/^\([^\\]*\):/\/cygdrive\/\1/gi'
+	else if [ ${OStype} = "mingw" ] ; then
+		${local_sed} 's/\\/\//g' | ${local_sed} 's/^\([^\\]*\):/\/\1/gi'
 	else
 		cat
-	fi
+	fi ; fi
 }
 
 function EchoPathUnixToWin()
 {
-	if [ ${OStype} = "cygwin" ] ; then
+	if [ ${OStype} = "cygwin" -o ${OStype} = "mingw" ] ; then
 		echo $1 | CatPathUnixToWin
 	else
 		echo $1
@@ -85,7 +92,7 @@ function EchoPathUnixToWin()
 
 function EchoPathWinToUnix()
 {
-	if [ ${OStype} = "cygwin" ] ; then
+	if [ ${OStype} = "cygwin" -o ${OStype} = "mingw" ] ; then
 		echo $1 | CatPathWinToUnix
 	else
 		echo $1

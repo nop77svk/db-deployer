@@ -14,7 +14,7 @@ fi
 
 export ORACLE_HOME="${ORACLE_HOME:-${cfg_oracle_home}}"
 
-if [ ${OStype} = "cygwin" ] ; then
+if [ ${OStype} = "cygwin" -o ${OStype} = "mingw" ] ; then
 	export ORACLE_HOME=$( EchoPathUnixToWin "${ORACLE_HOME}" )
 fi
 

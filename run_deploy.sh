@@ -309,7 +309,7 @@ if [ "${gx_Action}" = "delta" -o "${gx_Action}" = "all" -o "${gx_Action}" = "syn
 	cd "${DeploySrcRoot}"
 
 # 2do! do not ignore the "deploy_repo" target; do a limited set of actions instead!
-	if [ ${OStype} = "cygwin" -o ${OStype} = "linux" ] ; then
+	if [ ${OStype} = "cygwin" -o ${OStype} = "linux" -o ${OStype} = "mingw" ] ; then
 		${local_find} . -mindepth 2 -not -path './.*/*' -not -name '*.~???' -not -name '*.???~' -not -name '*;deploy_repo.*' -not -name '*.tmp' -not -name '*.log' -type f | ${local_sed} 's/^\.\///g' > "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp"
 	else if [ ${OStype} = "SunOS" ] ; then
 		${local_find} . ! -name '*.???~' ! -name '*.~???' ! -name '*;deploy_repo.*' -! -name '*.tmp' -! -name '*.log' -type f | ${local_grep} -Evi '^\.\/\..*\/' 2> /dev/null | ${local_gawk} -v depf=2 -v FS='/' 'NF>=(1+depf)' > "${TmpPath}/${gx_Env}.script_full_paths.${RndToken}.tmp"
