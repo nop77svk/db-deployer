@@ -22,7 +22,7 @@ InfoMessage "        Oracle home in use = \"${ORACLE_HOME}\""
 
 l_oracle_bin_path=$( EchoPathWinToUnix "${ORACLE_HOME}" )
 if [ ! -f "${l_oracle_bin_path}/sqlplus" -a ! -f "${l_oracle_bin_path}/sqlplus.exe" ] ; then
-	l_oracle_bin_path = $( EchoPathWinToUnix "${ORACLE_HOME}" )/bin
+	l_oracle_bin_path=$( EchoPathWinToUnix "${ORACLE_HOME}" )/bin
 fi
 
 SqlPlusBinary="${l_oracle_bin_path}/sqlplus"
