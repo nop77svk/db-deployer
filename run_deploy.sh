@@ -13,17 +13,42 @@ set -o nounset
 set -o pipefail
 [ -n "${DEBUG:-}" ] && set -x # xtrace
 
-Here=$PWD
-ScriptPath=$( dirname "$0" )
-cd "${ScriptPath}"
-ScriptPath=$PWD
-cd "${Here}"
+# ------------------------------------------------------------------------------------------------
+
+# modules importing support
+. <( curl -s "https://gist.githubusercontent.com/nop77svk/c26fd5af0a307e2a5a052eb25070fe87/raw/bash::base::modules-support.sh" ) \
+	|| function nop77svk__LoadModule()
+	{
+		echo "WARNING! Local implementation of nop77svk__LoadModule in effect!" >&2
+
+		local i_url="$1"
+
+		local l_local_fname=$( echo "${i_url}" | tr ':/?&=' '-----' )
+	
+		curl -s -o "${TEMP}/${l_local_fname}" "${i_url}" \
+			|| [ -f "${TEMP}/${l_local_fname}" ] \
+			|| ( echo "ERROR: Failed to import module ${i_url}" >&2 ; false )
+
+		. "${TEMP}/${l_local_fname}" \
+			|| ( echo "ERROR: Failed to load module ${i_url}" >&2 ; false )
+	}
+
+# submodule: exception handling
+nop77svk__LoadModule "https://gist.githubusercontent.com/nop77svk/4a56f29983f63442a84a49cf4650021d/raw/bash::base::exception-handling.sh"
+# submodule: console output
+nop77svk__LoadModule "https://gist.githubusercontent.com/nop77svk/47f673de1d4ec4fa8b7330af66532595/raw/bash::base::console-messaging.sh"
+# submodule: absolute paths
+nop77svk__LoadModule "https://gist.githubusercontent.com/nop77svk/b0a6c93e226f9290698fc149fc70d505/raw/bash::base::absolute-path-globals.sh"
+# submodule: OS-specific utils
+nop77svk__LoadModule "https://gist.githubusercontent.com/nop77svk/0af7e1de166c34e5aadc5a898ed5e06d/raw/bash::base::os-specific-utils.sh"
 
 # -------------------------------------------------------------------------------------------------
 # setup auxiliary routines
 
+ScriptPath=$( nop77svk__EchoPathWinToUnix "${nop77svk__script_path}" )
+Here=$( nop77svk__EchoPathWinToUnix "${nop77svk__here}" )
+
 CommonsPath="${ScriptPath}/.common"
-. "${CommonsPath}/common.sh"
 
 g_LogFolder="${Here}"
 LogFileStub=run_deploy
@@ -32,10 +57,8 @@ LogFileStub=run_deploy
 
 DoLog  ---------------------------------------------------------------------------------------------------
 
+. "${CommonsPath}/common.sh"
 . "${CommonsPath}/os_specific_utils.sh"
-
-ScriptPath=$( EchoPathWinToUnix "${ScriptPath}" )
-Here=$( EchoPathWinToUnix "${Here}" )
 
 # ------------------------------------------------------------------------------------------------
 
@@ -183,7 +206,7 @@ fi
 # ------------------------------------------------------------------------------------------------
 
 formerLogFolder="${g_LogFolder}"
-newLogFolder=$( EchoPathWinToUnix "${cfg_log_folder:-${g_LogFolder:-${DeploySrcRoot:-${Here}}}}" )
+newLogFolder=$( nop77svk__EchoPathWinToUnix "${cfg_log_folder:-${g_LogFolder:-${DeploySrcRoot:-${Here}}}}" )
 
 if [ "x${formerLogFolder}" != "x${newLogFolder}" ] ; then
 	InfoMessage "    note: switching log output from \"${g_LogFolder}\" to \"${newLogFolder}\""
@@ -196,7 +219,7 @@ fi
 if [ "${gx_Action}" != "help" ] ; then
 	InfoMessage "Further configuring the deployer"
 
-	TmpPath=$( EchoPathWinToUnix "${cfg_tmp_path:-${DeploySrcRoot}}" )
+	TmpPath=$( nop77svk__EchoPathWinToUnix "${cfg_tmp_path:-${DeploySrcRoot}}" )
 	TmpPath=$( EchoFolderAbsolutePath "${TmpPath}" )
 	InfoMessage "    temporary files path = \"${TmpPath}\""
 

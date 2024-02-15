@@ -16,13 +16,15 @@ function DoLog()
 
 function InfoMessage()
 {
-	echo "$*"
+	EchoInfo "$*"
 	DoLog "$*"
 }
 
-trap 'ThrowException "Uncaught exception!"' ERR
-trap 'ThrowException "DB-deployer shell script KILLed"' KILL
-trap 'ThrowException "DB-deployer shell script TERMed"' TERM
+function ErrorMessage()
+{
+	EchoError "$*"
+	DoLog "ERROR: $*"
+}
 
 function ThrowException()
 {
@@ -32,9 +34,9 @@ function ThrowException()
 	echo ------------------------------------------------------------------------------
 	echo ERROR IN $0 !
 	for msg in "$@" ; do
-		InfoMessage "${msg}"
+		ErrorMessage "${msg}"
 	done
-	InfoMessage "Command return code = ${exitStatus}"
+	ErrorMessage "Command return code = ${exitStatus}"
 
 	if [ -n "${ErrorNotificationMailRecipients:=}" ] ; then
 		(
